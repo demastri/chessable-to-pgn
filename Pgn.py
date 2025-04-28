@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 from WebFetch import WebFetch
@@ -20,11 +21,11 @@ class Pgn:
         outPgn += Pgn.buildMoveBody(moves, 0)
         outPgn += Pgn.buildGameResult(result)
         # print(str(count))
-        return outPgn
+        return re.sub(r' +', ' ', outPgn)
 
     @classmethod
     def buildHeader(cls, courseId, variationId, name:str, chapter, result, roundStr):
-        courseTitle = chapter[0].text
+        courseTitle = re.sub(r'\s+', ' ', chapter[0].text.replace( "\n", ""))
         courseChapter = chapter[2].text
         header = """[Event \""""+courseTitle.strip()+" - " + courseChapter.strip() + """\"]
 [Site \"chessable.com/variation/"""+str(variationId)+"""/\"]
@@ -72,16 +73,23 @@ class Pgn:
                         else:
                             outString += "... "
                         firstMove = False
-                    outString += c["data-san"]+" "
-            if c.name == "span" and c.get("class") is not None and "commentTopvar" in c["class"]:
+                    outString += c["data-san"]
+                    if Pgn.getNag(c.text) != "":
+                        outString += Pgn.getNag(c.text) # nag could be included in display text
+                    outString += " "
+            if c.name == "span" and c.get("class") is not None and "annotation" in c["class"] and c["data-original-title"] != "" and Pgn.getNag(c.text) != "":
+                outString = outString[:-1] + Pgn.getNag(c.text) + " " # or nag could be defined in a separate span
+
+            #for embedded variations, write "(" then kids pgn, then ")"
+            if c.name == "span" and c.get("class") is not None and ("commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
                 outString += "( "
                 firstMove = True
 
-
+            # in any event, make sure we write any kid nodes' data
             kids = c.findChildren(recursive=False)
             outString = outString + Pgn.buildMoveBody(kids, depth)
 
-            if c.name == "span" and c.get("class") is not None and "commentTopvar" in c["class"]:
+            if c.name == "span" and c.get("class") is not None and ("commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
                 outString += " ) \n"
 
 
@@ -90,6 +98,21 @@ class Pgn:
         depth -= 1
 
         return outString
+
+    @classmethod
+    def getNag(cls, c):
+        nagStrings = { "!": 1, "?": 2, "!!": 3, "??": 4, "!?": 5, "?!": 6,
+                       "=": 11 }
+
+        if(len(c)>=2 and c[len(c)-2:] in nagStrings.keys()):
+            return " $"+str(nagStrings[c[len(c)-2:]])
+        if(len(c)>=1 and c[len(c)-1:] in nagStrings.keys()):
+            return " $"+str(nagStrings[c[len(c)-1:]])
+
+        # note, this occurs in the next child after the move text:  <span class="annotation" data-original-title="Good move">!</span>
+
+        return ""
+
 
     @classmethod
     def writeCoursePgnFile( cls, courseId, pgnOut, incremental ):
