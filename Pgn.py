@@ -15,8 +15,8 @@ class Pgn:
     def createPgnFromHtml(cls, courseId:str, variationId, variation, roundStr):
         count=0
         firstMove = True
-        name, chapter, moves = WebFetch.getVariationParts(variation)
-        result = Pgn.getGameResult(moves)
+        name, chapter, moves, term = WebFetch.getVariationParts(variation)
+        result = Pgn.getGameResult(term)
         outPgn = Pgn.buildHeader(courseId, variationId, name, chapter, result, roundStr)
         outPgn += Pgn.buildMoveBody(moves, 0)
         outPgn += Pgn.buildGameResult(result)
@@ -56,6 +56,9 @@ class Pgn:
         for c in moves:
             if c.name == "span" and c.get("class") is not None and "commentInVariation" in c["class"]:
                 outString += "{ "+c.text+" } "
+            if c.name == "div" and c.get("class") is not None and ("openingNum" in c["class"] and Pgn.isTerminator(c.text)):
+                outString += "\n\n "+c.text+"\n\n"
+
             if c.name == "div" and c.get("class") is not None and ("whiteMove" in c["class"] or "blackMove" in c["class"]):
                 if firstMove or "whiteMove" in c["class"]:
                     outString += c["data-move"] + " "
@@ -65,7 +68,10 @@ class Pgn:
                 if c.get("data-san") is not None:
                     fenParts = c['data-fen'].split()    # "2r2rk1/3nbpp1/pp1p3P/4pP2/P1q2P2/2N1BQ2/1Pn3BP/3R1R1K b - - 0 22"
                     isWhite = fenParts[1] == "b"    # after this move...
-                    moveNbr = fenParts[5]
+                    moveNbr = int(fenParts[5]) # if it's white to move before this fen, then the number is 1 high
+                    if not isWhite:
+                        moveNbr -= 1
+                    moveNbr = str(moveNbr)
                     if firstMove or isWhite:
                         outString += moveNbr
                         if isWhite:
@@ -102,7 +108,9 @@ class Pgn:
     @classmethod
     def getNag(cls, c):
         nagStrings = { "!": 1, "?": 2, "!!": 3, "??": 4, "!?": 5, "?!": 6,
-                       "=": 11 }
+                       "=": 11, "∞": 13,
+                       "⩲": 14, "⩱": 15, "±": 16, "∓": 17, "+-": 18, "-+": 19 }
+        # at the very least, I need example characters for 15 and 17 - black slightly and moderate adv
 
         if(len(c)>=2 and c[len(c)-2:] in nagStrings.keys()):
             return " $"+str(nagStrings[c[len(c)-2:]])
@@ -113,6 +121,12 @@ class Pgn:
 
         return ""
 
+    @classmethod
+    def isTerminator(cls, s):
+        if s is None:
+            return ""
+        termStrings = ["*", "1-0", "0-1", "1/2-1/2"]
+        return s.strip() in termStrings
 
     @classmethod
     def writeCoursePgnFile( cls, courseId, pgnOut, incremental ):
@@ -135,4 +149,7 @@ class Pgn:
 
     @classmethod
     def getGameResult( cls, result ):
+        for x in result:
+            if Pgn.isTerminator(x.text):
+                return x.text
         return "*"

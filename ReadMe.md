@@ -9,6 +9,14 @@ Chessable to PGN Tooling
 
 Release Notes
 -
+- v0.11 - 28-Apr-2025
+  - First pass at handling move and board eval NAGs as well as game results (so inconsistent in courses)
+  - much closer to release-ready
+  - Generally handles (properly) nested variations well.  The two edge cases I know of that still mess it up are
+    - noted that occasionally the first move of a variation is a continuation, not an alternate move as defined in the spec, which correctly breaks PGN readers (including ChessBase).  The fix would be to re-enter the last move before the variation started
+    - as mentioned before, also within a variation is repeated.  "g4 wins like this: g4 ..."  The fix here would be to not emit the second move.
+    - the problem is I've tried hard NOT to keep game state or validate positions, since that's so heavyweight.  Will see if there's a quick fix 
+      - would keeping the last emitted FEN be good enough for this?  Not formally, there could be N nested "continuations", but that's not the usage I've seen... will try it out
 - v0.10 - 27-Apr-2025 - absolutely a pre-release version
   - Set the tool up its own standalone repo
   - Does a good job of fetching html, and generates passable PGN for simple game files

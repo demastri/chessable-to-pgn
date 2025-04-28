@@ -102,7 +102,8 @@ class WebFetch:
             name = variationBs.find('div', id="theOpeningTitle").text
             chapter = variationBs.find('div', class_="allOpeningDetails").find_all("li")
             moves = variationBs.find('div', id="theOpeningMoves").findChildren("span", recursive=False)
-            return name, chapter, moves
+            term = variationBs.find('div', id="theOpeningMoves").findChildren("div", recursive=False)
+            return name, chapter, moves, term
         except:
             print("problem parsing variation parts\n----------\n"+str(variationBs)+"\n----------\n")
             return "",[],None
