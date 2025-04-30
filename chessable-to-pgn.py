@@ -15,7 +15,7 @@ profileIds = []
 
 
 def main():
-    print("Chessable-to-PGN tool (c) 2025 John DeMastri under MIT License")
+    print("Chessable-to-PGN tool (c) 2025 John DeMastri")
     if len(sys.argv) < 2:
         print("Please provide at least one courseID")
         return
@@ -32,7 +32,6 @@ def main():
                 if not quit:
                     processBatch(courseIdAsList, variationIdAsList, True, True, True)
                     print(" - PGN Generated")
-            print("Exiting interactive mode!")
         case "webFetchThenPgn":
             processBatch(courses, variations, True, True, False)
         case "webFetch":
@@ -49,6 +48,8 @@ def main():
 
     print("--- complete ---")
     print(datetime.now())
+    if processMode == "interactive":
+        input("Exiting interactive mode!  Press ENTER to close this window.")
 
 
 def getNextItemToProcess():

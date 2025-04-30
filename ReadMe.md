@@ -37,26 +37,27 @@ First Time Setup
       - The location that binary will look for profile data, should look something like:
       - "C:/Users/john/AppData/Local/Google/Chrome for Testing/User Data"
     - TESTING_PROFILE - the profile this browser should use - likely can leave as "Default"
-    - HTML_CACHE_PATH - the place that read html files will be stored - default is './html/'
-      - `./html/course`
-        - this is where course page html files are stored by course ID, like 24575.html
-      - `./html/course/<courseID>`  
-        - this folder holds the retrieved html that course's chapter pages - 1/chapter
-      - `./html/course/<courseID>/variation`  
-        - this folder holds all of the variation html files are stored 1/variation
-      - `/.html/course/one-off/variation`  
-        - this folder holds variation htmls loaded/processed directly (see usage)
-    - PGN_CACHE_PATH - the place that generated pgn files will be stored - default is './pgn/'
-      - `./pgn/course`     
-        - this folder holds files - one per course - containing all variations as pgn, like 24575.pgn
-      - `./pgn/variation`  
-        - this folder holds files - one per variation - containing that id's variation as pgn, like 38877075.pgn
-- Chrome for Testing Setup
-  - you will want to take the executable for Chrome for Testing (the one in CHROME_FOR_TESTING_BINARY_LOC) and 
-run it directly.  A browser window will open.  Set up a profile for testing (can be any ID you want - the point is
-not to use your personal profile...)
-  - While in this profile, log into chessable using your credential.  This is how selenium will access chessable.  Once you
-have done this and can see your courses, etc., you can shut the browser down.
+    - The next two variables can also be set via command line parameters
+      - HTML_CACHE_PATH - the place that read html files will be stored - default is './html/'
+        - `./html/course`
+          - this is where course page html files are stored by course ID, like 24575.html
+        - `./html/course/<courseID>`  
+          - this folder holds the retrieved html that course's chapter pages - 1/chapter
+        - `./html/course/<courseID>/variation`  
+          - this folder holds all of the variation html files are stored 1/variation
+        - `/.html/course/one-off/variation`  
+          - this folder holds variation htmls loaded/processed directly (see usage)
+      - PGN_CACHE_PATH - the place that generated pgn files will be stored - default is './pgn/'
+        - `./pgn/course`     
+          - this folder holds files - one per course - containing all variations as pgn, like 24575.pgn
+        - `./pgn/variation`  
+          - this folder holds files - one per variation - containing that id's variation as pgn, like 38877075.pgn
+    - Chrome for Testing Setup
+      - you will want to take the executable for Chrome for Testing (the one referenced in CHROME_FOR_TESTING_BINARY_LOC) and 
+    run it directly.  A browser window will open.  Set up a profile for testing (can be any ID you want - the point is
+    not to use your personal profile...)
+      - While in this profile, log into chessable using your credential.  This is how selenium will access chessable.  Once you
+    have done this and can see your courses, etc., you can shut the browser down.
 
 Usage
 - 
