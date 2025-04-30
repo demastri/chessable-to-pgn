@@ -15,10 +15,12 @@ profileIds = []
 
 
 def main():
+    print("Chessable-to-PGN tool (c) 2025 John DeMastri under MIT License")
     if len(sys.argv) < 2:
         print("Please provide at least one courseID")
         return
 
+    print("--- starting ---")
     print(datetime.now())
     processMode, courses, variations = processCommandLineParams()
 
@@ -74,26 +76,43 @@ def processCommandLineParams():
     inChapter = False
     inVariation = False
     inMode = False
+    inHtml = False
+    inPgn = False
     processMode = "webAndPgnByVar"  # "webFetchThenPgn" # "webFetch" # "Pgn" # "webAndPgnByVar" #interactive
     for arg in sys.argv[1:]:
         if arg == 'c':
             inCourse = True
             inChapter = inVariation = False
             inMode = False
-        elif arg == 'p':
+            inHtml = inPgn = False
+        elif arg == 'ch':
             inChapter = True
             inCourse = inVariation = False
             inMode = False
+            inHtml = inPgn = False
         elif arg == 'v':
             inVariation = True
             inCourse = inChapter = False
+            inHtml = inPgn = False
             inMode = False
         elif arg == ('m'):
-            inMode = True
+            inMode = True  # don't change where IDs go (course / chapter / var)
+        elif arg == ('p'):
+            inPgn = True  # don't change where IDs go (course / chapter / var)
+        elif arg == ('h'):
+            inHtml = True  # don't change where IDs go (course / chapter / var)
         elif inMode:
             processMode = arg
             inMode = False
             print("- setting process mode to <" + processMode + ">")
+        elif inPgn:
+            ConfigData.PGN_CACHE_PATH = arg
+            inPgn = False
+            print("- setting PGN root location to <" + arg + ">")
+        elif inHtml:
+            ConfigData.HTML_CACHE_PATH = arg
+            inPgn = False
+            print("- setting Html root location to <" + arg + ">")
         elif inCourse:
             courses.append(arg)
         elif inVariation:

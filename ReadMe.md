@@ -62,7 +62,7 @@ Usage
 - 
 - This is a command line tool that can be run at a prompt or from within an IDE
   - the entry point is chessable-to-pgn.py, and your command line will look something like:
-    - `python chessable-to-pgn.py m <mode> c <courseIDs> v <variationIDs>`
+    - `python chessable-to-pgn.py m <mode> c <courseIDs> v <variationIDs> <config key> <config value>`
 - CourseIDs and variationIDs are simply lists of the integer IDs Chessable has assigned to these items
   - to load an entire course, just specify the course ID, the tool will find all of the variations.
     - to get a specific course ID, go to the course's home/info page.  The url is something like this example for
@@ -111,6 +111,17 @@ then generate all pgns when that's done
     well (and adds it to the course pgn, if it's working on a course) 
       - note that the overall time to completion is about the same, but you get the first pgn MUCH faster this way, 
       if that matters.  
+  - There are two configuration parameters that you can set via the command line:
+    - `p` sets the root for the PGN data cache.  This is where PGN files will be stored.  The default value is `"./pgn/"
+    - `h` sets the root for the HTML data cache.  This is where HTML files will be stored.  The default value is `"./html/"
+      - Example: `python chessable-to-pgn.py m interactive p c:/ChessData/pgn/ h c:/ChessData/tempData/html/` sets
+      both directories for an interactive session
+    - the other four config settings (chessable loc, your browser and profile locations and profile name) are typically 
+    set once at install (in ConfigData.py) and never modified for that environment.  If you're here goofing around with 
+    a python script to mangle HTML data, AND installing
+    the Google for Testing browser to be able to do it, you should probably be savvy enough to do that in code, once.
+    It's limited to modifying one text file...   If you always want to write to different directories, you can modify
+    those as well, and you won't have to supply them as parameters at runtime.
   - In testing, we typically let the tool fetch several large course over a couple of hours, then run pgn on
   those fetched htmls.  This way, we can test different pgn generation code without having to reload from the web each time.  
   The four different modes allow you to decide how best to process your courses.
