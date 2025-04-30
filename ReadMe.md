@@ -72,7 +72,11 @@ Usage
       - Very similar for variations, except the url is something like: https://www.chessable.com/variation/3968464/ 
       where the variation ID is (you guessed it) 3968464
   - loading a single variation can be good for testing, or if you want to clear your commentary and start fresh with a variation.
-- there are four modes that you can run the tool in:
+- there are five modes that you can run the tool in:
+  - `interactive`
+    - This is the most basic possible interactive prompt - enter the course or variation ID(s) you want to process, 
+    one at a time, when prompted and it will process them.  This mode is helpful if you want to run the tool from a shortcut.
+      - This is usually the only thing on the command line: `python main.py m interactive`
   - `webFetchThenPgn`
     - was originally the default mode, now the default is `webAndPgnByVar`, see below.
     - the tool will pull all htmls for the specified courses and/or variations, 
@@ -146,7 +150,7 @@ Performance and Operational Notes
     - That's a joke. They used to say that the C-1541 disk drive was only a little faster than you typing the code yourself into a C-64...and not quite as reliable.  I know...it's really just too funny to include on a page noone will ever see....
   - it does a good job of:
     - running unattended, so as long as your computer doesn't sleep, you can let really long runs (several courses??) run overnight and your pgn will be magically available in the am
-    - restarting interrupted jobs, so if it detects that it's already downloaded the html, it will use the local copy instead.  Just issue the same command and it will scan its local cachee as needed
+    - restarting interrupted jobs, so if it detects that it's already downloaded the html, it will use the local copy instead.  Just issue the same command and it will scan its local cache as needed
       - This means that if variations get added to your course, you likely need to delete the course and/or chapter files for that course. (chapters are defined from the course file, and variations from the chapter files...).
       - This also means that if variations change (but keep the same id - no idea if this ever actually happens), then deleting that variation file and rerunning the course will cause that variation (only) to be repulled and processed. 
 - All PGN is generated from scratch on every run, so the `<courseID>.pgn` file always contains all variations, in course order. 
@@ -157,7 +161,8 @@ Performance and Operational Notes
 Release Notes
 - 
 - v0.20 - 29-Apr-2025 - quantum improvement in capability, close to ready for prime-time
-  - changed default mode to incremental pgn generation
+  - added the most basic possible interactive mode - the tool runs nicely from a desktop shortcut :)
+  - changed default mode to incremental pgn generation in batch mode
   - fixed STR / PGN tags so they are more useful in ChessBase
   - cleanup of nested variations, including when they are "continuations"
   - better error reporting / exception handling
