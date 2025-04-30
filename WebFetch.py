@@ -106,7 +106,7 @@ class WebFetch:
             return name, chapter, moves, term
         except:
             print("problem parsing variation parts\n----------\n"+str(variationBs)+"\n----------\n")
-            return "",[],None
+            return "",[],None, None
 
 
     @classmethod
@@ -174,7 +174,9 @@ class WebFetch:
                 browser.quit()
                 #print("Quitting Session for "+profileName)
                 return outText
-            except:
-                print("error in loadHtmlFromWeb on attempt "+str(retry))
+            except Exception as e:
+                print("error in loadHtmlFromWeb for <"+url+"> on attempt :"+str(retry), end="")
+                exception_message = e.args[0] if e.args else "No message"
+                print(f": : {exception_message}")
 
         return None
