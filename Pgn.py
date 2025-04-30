@@ -27,16 +27,28 @@ class Pgn:
 
     @classmethod
     def buildHeader(cls, courseId, variationId, name:str, chapter, result, roundStr):
-        courseTitle = re.sub(r'\s+', ' ', chapter[0].text.replace( "\n", ""))
-        courseChapter = chapter[2].text
-        header = """[Event \""""+courseTitle.strip()+" - " + courseChapter.strip() + """\"]
-[Site \"chessable.com/variation/"""+str(variationId)+"""/\"]
+        # we have 6 pieces of info to be conveyed: course, chapter, variation title, variation url, location as round, and result
+        # these can be mapped as:
+        #  result => Result
+        #  location => Round (4th var in 3rd chapter is 3.4)
+        #  course title => Event
+        #  variation URL => Site
+        #  chapter name => White
+        #  variation title => Black
+        # Most viewers break the names into first and last based on the ',' character
+        # We can prevent that by replacing any "," with '-' (can see if this looks ok...)
+        courseTitle = re.sub(r'\s+', ' ', chapter[0].text.replace( "\n", "")).strip()
+        chapterTitle = re.sub(r'\s+', ' ', chapter[2].text.replace( "\n", "")).strip().replace(",","-")
+        variationTitle = re.sub(r'\s+', ' ', name.replace( "\n", "")).strip().replace(",","-")
+        variationUrl = ConfigData.BASE_CHESSABLE_URL+"variation/"+str(variationId)
+
+        header = """[Event \""""+courseTitle+ """\"]
+[Site \""""+variationUrl+"""/\"]
 [Date \"????.??.??\"]
 [Round \""""+roundStr+"""\"]
-[White \"\"]
-[Black \"\"]
-[Result \""""+result+"""\"]
-[Title \""""+name.strip()+"\"]\n"
+[White \""""+chapterTitle+"""\"]
+[Black \""""+variationTitle+"""\"]
+[Result \""""+result+"\"]\n"
         return header
 
 

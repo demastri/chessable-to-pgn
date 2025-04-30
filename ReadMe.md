@@ -11,19 +11,22 @@ Chessable to PGN Tooling
 
 Installation
 -
-This tool uses several helpers to perform it's job:
+This tool uses several helpers to perform its job:
 
 - A reasonably recent Python install - tested on 3.13.3 - have done no testing on other versions
-- Chrome for Testing (which requires node to install the current stable version)
-  - if you don't have node/npm installed, go here: https://nodejs.org/en/download
-  - To get the lastest stable version of Chrome for Testing, run this at a prompt that can see npm:
-    - npx @puppeteer/browsers install chrome@stable
-    - take note of the install location and version (see setup)
-- Selenium
-- Beautiful Soup
-  - These two can just be installed as a regular Python package
-  - (recommend as always using a bespoke conda or venv environment for all projects)
-
+- External dependencies
+  - Chrome for Testing (which requires node to install the current stable version)
+    - if you don't have node/npm installed, go here: https://nodejs.org/en/download
+    - To get the lastest stable version of Chrome for Testing, run this at a prompt that can see npm:
+      - npx @puppeteer/browsers install chrome@stable
+      - take note of the install location and version (see setup)
+- Python packages
+  - These can just be installed as a regular Python packages (use your favorite package manager)
+  - We recommend (as always) using a bespoke conda or venv environment for all Python projects
+    - selenium
+    - selenium-manager
+    - beautifulsoup4
+  
 First Time Setup
 -
 - In "configdata.py" set the following variables:
@@ -58,14 +61,22 @@ have done this and can see your courses, etc., you can shut the browser down.
 Usage
 - 
 - This is a command line tool that can be run at a prompt or from within an IDE
-  - the main method is `python main.py m <mode> c <courseIDs> v <variationIDs>`
+  - the entry point is main.py, and your command line will look something like:
+    - `python main.py m <mode> c <courseIDs> v <variationIDs>`
 - CourseIDs and variationIDs are simply lists of the integer IDs Chessable has assigned to these items
   - to load an entire course, just specify the course ID, the tool will find all of the variations.
+    - to get a specific course ID, go to the course's home/info page.  The url is something like this example for
+    Vukovic's excellent book:
+      - https://www.chessable.com/the-art-of-attack-in-chess/course/24575/
+      - The course ID in this case is just 24575
+      - Very similar for variations, except the url is something like: https://www.chessable.com/variation/3968464/ 
+      where the variation ID is (you guessed it) 3968464
   - loading a single variation can be good for testing, or if you want to clear your commentary and start fresh with a variation.
 - there are four modes that you can run the tool in:
   - `webFetchThenPgn`
-    - this is the default mode.  the tool will pull all of the html for the specified courses and/or variations, 
-then generate all of the pgn when that's done
+    - was originally the default mode, now the default is `webAndPgnByVar`, see below.
+    - the tool will pull all htmls for the specified courses and/or variations, 
+then generate all pgns when that's done
     - note 1 - this can take a while, since chessable dynamically loads the html, we have to wait several seconds 
                 for each page to finish loading
     - note 2 - this is interruptable - if you get 300 of 1000 variations fetched and restart the process, it will
@@ -86,36 +97,43 @@ then generate all of the pgn when that's done
     - this is just like webFetchThenPgn, except that it doesn't fetch html, just generates pgn from any html that
     has been previously fetched
   - `webAndPgnByVar`
-    - this is similar to `webFetchThenPgn`, but instead of loading all of the html, it generates pgn's as it processes 
+    - this is the default mode.  
+    - this is similar to `webFetchThenPgn`, but instead of loading all of the html, it inc`rementally generates pgn's as it processes 
     individual variations
-    - so, normally, the tool fetches the course file, then all of the chapter files for the course, then all of the 
-    variations in all of the chapters.  Only then does it go back and process the pgns for the fethced variations.
-    - in this mode, it still fetches the course file and all of the chapter files for that course, but then for each 
-    variation it fetches the html, then generates that html's pgn
+    - so, in `webFetchThenPgn` mode, the tool fetches the course file, then all chapter files for the course, then all  
+    variation files.  Only then does it go back and process the pgns for the fethced variations.
+    - in this mode - `webAndPgnByVar`, it still fetches the course file and all of the chapter files for that course, 
+    but then as it fetches the html for each variation, it also incrementally then generates that variation's pgn as 
+    well (and adds it to the course pgn, if it's working on a course) 
       - note that the overall time to completion is about the same, but you get the first pgn MUCH faster this way, 
       if that matters.  
-  - In testing, we typically let the tool fetch large course over a couple of hours, then run pgn on
-  those fetched htmls.  The modes allow you to decide how best to process your courses.
+  - In testing, we typically let the tool fetch several large course over a couple of hours, then run pgn on
+  those fetched htmls.  This way, we can test different pgn generation code without having to reload from the web each time.  
+  The four different modes allow you to decide how best to process your courses.
   - We've also tried to run this in multiprocess mode, but consistently get selenium errors with multiple processes 
   simultaneously accessing the same profile, which should be impossible since we establish one profile per variation.  
-  Anyone wanting to help resolve this should reach out, or generate a pull request. 
+  Anyone wanting to help resolve this should reach out, or do the work :) and generate a pull request. 
 
 PGN Tags Generated
 -
-- A typical PGN has a Seven Tag Roster associated with it.  Not all of these make sense in this context.  
-- It generates the following 8 tags (STR + Title).  Example and explanation: 
-  - `[Event "The Checkmate Patterns Manual - 1. Introduction"]`  -- this tag has the course and chapter names for this variation
+- A typical PGN has a Seven Tag Roster (STR) associated with it.  Not all of these make sense in this context, and we have 
+extra info to share, so these tags have been co-opted...  Example STR and explanation: 
+  - `[Event "The Checkmate Patterns Manual"]`  -- this tag has the course name that this variation belongs to
   - `[Site "chessable.com/variation/38877075/"]`  -- this tag has the url that points to this specific variation
   - `[Date "????.??.??"]` -- undefined, but the tag is required by many readers so this is provided as shown
   - `[Round "x.x"]`       -- This shows the chapter and variation in that chapter.  ex 4th var in the 3rd chapter would 
-  be "3.4".  These are ORDINAL numbers based on their positions in the course, and do not correspond to any goofy
+  be "3.4".  These are ORDINAL numbers based on their positions as listed in the course, and do not correspond to any goofy
   chapter or variation numbering scheme used by the author
-  - `[White ""]`          -- undefined, but the tag is required by many readers so this is provided as shown
-  - `[Black ""]`          -- undefined, but the tag is required by many readers so this is provided as shown
-  - `[Result "*"]`        -- undefined, but the tag is required by many readers so this is provided as shown (will eventually be corrected)
-  - `[Title "Next steps after mastering this course"]` -- this is the title shown for this specific variation. 
-    - Originally thought this would be picked up by CB as "Game Tag".  This is not the case.  
-    - Will rethink data/STR tag mappings after a little more research  
+  - `[White "1. Introduction"]`          -- this tag has the chapter name for this variation
+  - `[Black "Next steps after mastering this course"]`          -- this tag has this variation's title
+  - `[Result "*"]`        -- accurate if variation supplies it. Most don't - "*" is used in that case.
+- Note that for player names (`"White"` and `"Black"` tags), most readers split the strings into first/last name depending 
+on location of the first "," character.  To avoid this, all "," characters in actual chapter or variation name text are 
+replaced with "-".
+- This leads to PGN collections that look like this in ChessBase, with the course name to the right in the "Tournament" column, 
+Chapters down the left side,variations just to their right, all in lexical order.  The Round column
+reflects this order as well (as in the tag description above): 
+  - ![img.png](img.png)
 
 Performance and Operational Notes
 -
@@ -138,10 +156,13 @@ Performance and Operational Notes
 
 Release Notes
 - 
-- v0.20 - 29-Apr-2025 - quantum improvement in capability, not quite ready for prime-time
+- v0.20 - 29-Apr-2025 - quantum improvement in capability, close to ready for prime-time
+  - changed default mode to incremental pgn generation
+  - fixed STR / PGN tags so they are more useful in ChessBase
   - cleanup of nested variations, including when they are "continuations"
   - better error reporting / exception handling
   - clean up this file (ReadMe.md) to be a little more readable and useful.
+  - added `license.txt` file to reflect that this tool is covered by the MIT license.
 - v0.11 - 28-Apr-2025
   - First pass at handling move and board eval NAGs as well as game results (so inconsistent in courses)
   - much closer to release-ready

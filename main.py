@@ -47,7 +47,7 @@ def processCommandLineParams():
     inChapter = False
     inVariation = False
     inMode = False
-    processMode = "webFetchThenPgn" # "webFetch" # "Pgn" # "webAndPgnByVar"
+    processMode = "webAndPgnByVar" # "webFetchThenPgn" # "webFetch" # "Pgn" # "webAndPgnByVar"
     for arg in sys.argv[1:] :
         if arg == 'c':
             inCourse = True
