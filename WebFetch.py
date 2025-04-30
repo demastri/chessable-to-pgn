@@ -10,11 +10,14 @@ import time
 
 import ConfigData
 
+
 class WebFetch:
-    doFetch = True
+    FETCH_NEW = 1
+    FETCH_ALL = 2
+    FETCH_NONE = 3
 
     def __init__(self):
-        WebFetch.doFetch = True
+        WebFetch.doFetch = WebFetch.FETCH_NEW
 
     @classmethod
     def getCourseDetail(cls, courseId: str, profileName: str):
@@ -82,7 +85,7 @@ class WebFetch:
         href = variationBs.find('a', href=True)['href']
         tags = href.split('/')
         variationID = tags[len(tags)-2]
-        print("In GetVariationDetail '"+courseId+"-"+variationID +"-"+name)
+        print("Getting Variation Detail '"+courseId+"-"+variationID +"-"+name+"'")
         bs = WebFetch.getVariationHtml(variationID, courseId, profileName)
 
         return [bs, variationID]
@@ -98,6 +101,8 @@ class WebFetch:
 
     @classmethod
     def getVariationParts(cls, variationBs: bs4.element.Tag):
+        if variationBs is None:
+            return "",[],None, None
         try:
             name = variationBs.find('div', id="theOpeningTitle").text
             chapter = variationBs.find('div', class_="allOpeningDetails").find_all("li")
@@ -105,7 +110,7 @@ class WebFetch:
             term = variationBs.find('div', id="theOpeningMoves").findChildren("div", recursive=False)
             return name, chapter, moves, term
         except:
-            print("problem parsing variation parts\n----------\n"+str(variationBs)+"\n----------\n")
+            print("problem parsing variation parts\n")
             return "",[],None, None
 
 
@@ -126,14 +131,19 @@ class WebFetch:
         if fileroot != "":
             location = fileroot + "/" + location
 
+        # don't bother checking if we're overwriting all
         # if the file already exists, load it
-        pageHtml = WebFetch.loadHtmlFromFile(location)
-        # otherwise get it from the web
-        if len(pageHtml) == 0:
-            if not WebFetch.doFetch:
-                return None
+        if WebFetch.doFetch == WebFetch.FETCH_ALL:
             pageHtml = WebFetch.loadHtmlFromWeb(url, profileName)
-            WebFetch.writeHtmlToFile(location, pageHtml)
+        else:
+            pageHtml = WebFetch.loadHtmlFromFile(location)
+            # otherwise get it from the web
+            if len(pageHtml) == 0:
+                if WebFetch.doFetch == WebFetch.FETCH_NONE:
+                    return None
+                # else doFetch == FETCH_NEW
+                pageHtml = WebFetch.loadHtmlFromWeb(url, profileName)
+                WebFetch.writeHtmlToFile(location, pageHtml)
 
         bs = BeautifulSoup(pageHtml, 'html.parser')
         return bs

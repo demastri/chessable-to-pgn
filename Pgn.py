@@ -18,6 +18,9 @@ class Pgn:
         count=0
         firstMove = True
         name, chapter, moves, term = WebFetch.getVariationParts(variation)
+        if chapter == []:
+            print(" - HTML not found for variation")
+            return None
         result = Pgn.getGameResult(term)
         outPgn = Pgn.buildHeader(courseId, variationId, name, chapter, result, roundStr)
         outPgn += Pgn.buildMoveBody(moves, 0)
