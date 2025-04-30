@@ -61,8 +61,8 @@ have done this and can see your courses, etc., you can shut the browser down.
 Usage
 - 
 - This is a command line tool that can be run at a prompt or from within an IDE
-  - the entry point is main.py, and your command line will look something like:
-    - `python main.py m <mode> c <courseIDs> v <variationIDs>`
+  - the entry point is chessable-to-pgn.py, and your command line will look something like:
+    - `python chessable-to-pgn.py m <mode> c <courseIDs> v <variationIDs>`
 - CourseIDs and variationIDs are simply lists of the integer IDs Chessable has assigned to these items
   - to load an entire course, just specify the course ID, the tool will find all of the variations.
     - to get a specific course ID, go to the course's home/info page.  The url is something like this example for
@@ -76,7 +76,7 @@ Usage
   - `interactive`
     - This is the most basic possible interactive prompt - enter the course or variation ID(s) you want to process, 
     one at a time, when prompted and it will process them.  This mode is helpful if you want to run the tool from a shortcut.
-      - This is usually the only thing on the command line: `python main.py m interactive`
+      - This is usually the only thing on the command line: `python chessable-to-pgn.py m interactive`
   - `webFetchThenPgn`
     - was originally the default mode, now the default is `webAndPgnByVar`, see below.
     - the tool will pull all htmls for the specified courses and/or variations, 
@@ -88,10 +88,10 @@ then generate all pgns when that's done
               rest from the web)
     - note 3 - you can have courses and variations on the same command line, anything after a c is a courseID, anything
     after a v is a variationID  
-    - ex1, for a course: `python main.py m webFetchThenPgn c 24575` loads and translates "The Art of Attack", resulting
+    - ex1, for a course: `python chessable-to-pgn.py m webFetchThenPgn c 24575` loads and translates "The Art of Attack", resulting
             in a generated `/pgn/course/24575.pgn` file.  The loaded html files will be in the folders `/course`,
             `/course/<courseID>` and `/course/<courseID>/variation` folders
-    - ex2, for a variation: `python main.py m webFetchThenPgn v 38877075` loads and translates the first variation
+    - ex2, for a variation: `python chessable-to-pgn.py m webFetchThenPgn v 38877075` loads and translates the first variation
         in the first chapter of the "Checkmate Patterns" course, resulting in a generated `/pgn/variation/38877075.pgn`
         file, and the html will be in `/course/one-off/variation/38877075.html`
   - `webFetch`
