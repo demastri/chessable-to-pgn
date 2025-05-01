@@ -18,8 +18,11 @@ import os.path
 from pathlib import Path
 import bs4
 from selenium import webdriver
+from selenium.webdriver import ActionChains
 from bs4 import BeautifulSoup
 import time
+
+from selenium.webdriver.common.by import By
 
 import ConfigData
 
@@ -120,10 +123,11 @@ class WebFetch:
             chapter = variationBs.find('div', class_="allOpeningDetails").find_all("li")
             moves = variationBs.find('div', id="theOpeningMoves").findChildren("span", recursive=False)
             term = variationBs.find('div', id="theOpeningMoves").findChildren("div", recursive=False)
-            return name, chapter, moves, term
+            inputFEN = variationBs.find('input', id="inputFEN")["value"]
+            return name, chapter, moves, term, inputFEN
         except:
             print("problem parsing variation parts\n")
-            return "",[],None, None
+            return "",[],None, None, None
 
 
     @classmethod
@@ -147,6 +151,7 @@ class WebFetch:
         # if the file already exists, load it
         if WebFetch.doFetch == WebFetch.FETCH_ALL:
             pageHtml = WebFetch.loadHtmlFromWeb(url, profileName)
+            WebFetch.writeHtmlToFile(location, pageHtml)
         else:
             pageHtml = WebFetch.loadHtmlFromFile(location)
             # otherwise get it from the web
@@ -186,7 +191,11 @@ class WebFetch:
                 options.add_argument('--profile-directory='+profileName) # TESTING_PROFILE)
                 browser = webdriver.Chrome(options=options)
                 browser.get(url)
-                time.sleep(5)
+                time.sleep(2)
+                controls = browser.find_element(By.ID,"controls")
+                buttons = controls.find_elements(By.TAG_NAME,"button")
+                buttons[1].click()
+                time.sleep(1)
                 outText = browser.page_source
                 browser.quit()
                 return outText

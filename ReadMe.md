@@ -116,6 +116,7 @@ extra info to share, so these tags have been co-opted...  Example STR and explan
   - `[White "1. Introduction"]`          -- this tag has the chapter name for this variation
   - `[Black "Next steps after mastering this course"]`          -- this tag has this variation's title
   - `[Result "*"]`        -- accurate if variation supplies it. Most don't - "*" is used in that case.
+  - `[FEN " - some fen string - "]`        -- this is only written when a variation does not start at the normal chess opening position
 - Note that for player names (`"White"` and `"Black"` tags), most readers split the strings into first/last name depending 
 on location of the first "," character.  To avoid this, all "," characters in actual chapter or variation name text are 
 replaced with "-".
@@ -145,13 +146,15 @@ Performance and Operational Notes
 
 Release Notes
 - 
-- v0.30 - 01-May-2025 - big code cleanup and change in user interface to make it easier to use
+- v0.30 - 01-May-2025
+  - support to write FEN when variations don't start at the normal start position
+  - big code cleanup and change in user interface to make it easier to use
   - changed modes and made flags specifying how to handle html and pgn simpler
   - exposed all operational parameters to make it easier to test
   - made interactive mode a little easier to use
   - broke command line and other utilities into separate modules
   - added better documentation to source files
-- made feedback (and this file) current and a little friendlier
+  - made feedback (and this file) current and a little friendlier
 - v0.20 - 29-Apr-2025 - quantum improvement in capability, close to ready for prime-time
   - added the most basic possible interactive mode - the tool runs nicely from a desktop shortcut :)
   - changed default mode to incremental pgn generation in batch mode
@@ -185,9 +188,9 @@ Release Notes
 Open Items
 - 
 - Repeated moves in variation (very rare situation, 0 cases found across 8 full courses in testing)
-- Better data / STR tag mapping so they are useful on ChessBase import
+- Some way to mark key moves in the position (chessable starts variations here...)
 - multiprocessing support is broken
-- ... unbelievably I think that's it...
+- ... I think that's it ...
 - if you find something, fix it and send a pull request.  Email (below) may not be replied to in a timely manner...
 
 Testing and Obvious Notes
