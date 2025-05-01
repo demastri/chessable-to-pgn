@@ -1,20 +1,34 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Filename: WebFetch.py
+Author: John DeMastri
+Create Date: 2025-04-27
+Version: 0.3
+Description: This script handles requests for HTML files.  Invokes selenium and caches files locally.
+Based on config, it will utilize existing cached files before retrieving from the web.
+Course files contain information on how to locate chapters.  Chapter files contain information on how to locate
+variations.  Variations contain actual course data.  This file only parses metadata to locate other files.  Retrieving
+actual course content from variations is handled in Pgn.py.
+
+License: MIT License
+Contact: chess@demastri.com
+"""
 import os.path
 from pathlib import Path
 import bs4
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
-#from selenium.webdriver.chrome.service import Service
-#from selenium.webdriver.chrome.options import Options
-#from webdriver_manager.chrome import ChromeDriverManager
 
 import ConfigData
 
 
 class WebFetch:
-    FETCH_NEW = 1
-    FETCH_ALL = 2
-    FETCH_NONE = 3
+    FETCH_NEW = 0
+    FETCH_ALL = 1
+    FETCH_NONE = 2
+    flagNames = ["update", "all", "none"]
 
     def __init__(self):
         WebFetch.doFetch = WebFetch.FETCH_NEW
@@ -22,20 +36,21 @@ class WebFetch:
     @classmethod
     def getCourseDetail(cls, courseId: str, profileName: str):
         # should return a map of chapter IDs and chapter names
-        # courses are located at /course/<courseID>
-        # chapters are located at /course/<courseID>/<chapterID>
-        # individual variations are located at /variation/<variationID>
-        # i don't need pgn for anything but variations.
+        # course information is located at /course/<courseID>.html, content in /course/<courseID>/
+        # chapters are located at /course/<courseID>/<chapter number>.html
+        # course variations are located at /course/<courseID>/variation/<variation ID>.html
+        # individual variations are located at /variation/<variationID>.html
+        # pgn is only written for variations.
         # getting course detail amounts to:
-        #  getting the metadata about the course (name, author, ??)
+        #  getting the metadata about the course from the course info file (name, author, ??)
         #  getting the list of chapters associated with this course
         #  for each chapter in the course
         #   getting the metadata about the chapter (name, priority, ??)
         #   getting the list of variations associated with this chapter
         #   for each variation in the chapter
         #    getting the detailed html for this variation
-        #    generate the pgn for this detailed html
-        #    do something with the pgn
+        #    generate the pgn for this detailed html (this is done elsewhere)
+        #    do something with the pgn (this is done elsewhere)
 
         bs = WebFetch.getCourseHtml(courseId, profileName)
         if bs is None:
@@ -49,11 +64,8 @@ class WebFetch:
         href = chapterBs.find('a', href=True)['href']
         tags = href.split('/')
         chapterID = tags[len(tags)-1]
-        #print("In GetChapterDetail "+courseId+"-"+chapterID +" Getting HTML")
         bs = WebFetch.getChapterHtml(courseId, chapterID, profileName)
-        #print("In GetChapterDetail "+courseId+"-"+chapterID +" Getting Vars")
         variations = WebFetch.getChapterVariations(bs)
-        #print("In GetChapterDetail "+courseId+"-"+chapterID +" Returning")
 
         return bs, variations
 
@@ -172,17 +184,11 @@ class WebFetch:
                 options.binary_location = ConfigData.CHROME_FOR_TESTING_BINARY_LOC
                 options.add_argument('--user-data-dir='+ConfigData.TESTING_PROFILE_BASE_DIR)
                 options.add_argument('--profile-directory='+profileName) # TESTING_PROFILE)
-                #if chessable-to-pgn.svc == None:
-                #    chessable-to-pgn.svc = Service(ChromeDriverManager().install())
-                #svc = Service("C:/Users/john/chromedriver/win64-135.0.7049.114/chromedriver-win64/chromedriver.exe")
-                #svc = Service("C:/Users/john/chromedriver/win64-137.0.7143.0/chromedriver-win64/chromedriver.exe")
-                #browser = webdriver.Chrome(service=svc, options=options)
                 browser = webdriver.Chrome(options=options)
                 browser.get(url)
                 time.sleep(5)
                 outText = browser.page_source
                 browser.quit()
-                #print("Quitting Session for "+profileName)
                 return outText
             except Exception as e:
                 print("error in loadHtmlFromWeb for <"+url+"> on attempt :"+str(retry), end="")

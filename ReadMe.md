@@ -35,7 +35,7 @@ First Time Setup
       - "C:/Users/john/chrome/win64-135.0.7049.114/chrome-win64/chrome.exe"
     - TESTING_PROFILE_BASE_DIR
       - The location that binary will look for profile data, should look something like:
-      - "C:/Users/john/AppData/Local/Google/Chrome for Testing/User Data"
+      - "C:/Users/<user>/AppData/Local/Google/Chrome for Testing/User Data"
     - TESTING_PROFILE - the profile this browser should use - likely can leave as "Default"
     - The next two variables can also be set via command line parameters
       - HTML_CACHE_PATH - the place that read html files will be stored - default is './html/'
@@ -61,74 +61,47 @@ First Time Setup
 
 Usage
 - 
-- This is a command line tool that can be run at a prompt or from within an IDE
+- This is a command line tool that can be run at a prompt or from within an IDE:
   - the entry point is chessable-to-pgn.py, and your command line will look something like:
-    - `python chessable-to-pgn.py m <mode> c <courseIDs> v <variationIDs> <config key> <config value>`
-- CourseIDs and variationIDs are simply lists of the integer IDs Chessable has assigned to these items
-  - to load an entire course, just specify the course ID, the tool will find all of the variations.
-    - to get a specific course ID, go to the course's home/info page.  The url is something like this example for
-    Vukovic's excellent book:
-      - https://www.chessable.com/the-art-of-attack-in-chess/course/24575/
-      - The course ID in this case is just 24575
-      - Very similar for variations, except the url is something like: https://www.chessable.com/variation/3968464/ 
-      where the variation ID is (you guessed it) 3968464
-  - loading a single variation can be good for testing, or if you want to clear your commentary and start fresh with a variation.
-- there are five modes that you can run the tool in:
-  - `interactive`
-    - This is the most basic possible interactive prompt - enter the course or variation ID(s) you want to process, 
-    one at a time, when prompted and it will process them.  This mode is helpful if you want to run the tool from a shortcut.
-      - This is usually the only thing on the command line: `python chessable-to-pgn.py m interactive`
-  - `webFetchThenPgn`
-    - was originally the default mode, now the default is `webAndPgnByVar`, see below.
-    - the tool will pull all htmls for the specified courses and/or variations, 
-then generate all pgns when that's done
-    - note 1 - this can take a while, since chessable dynamically loads the html, we have to wait several seconds 
-                for each page to finish loading
-    - note 2 - this is interruptable - if you get 300 of 1000 variations fetched and restart the process, it will
-              start at 301 (using whatever's already in the /course and /course/variations folders, and loading the 
-              rest from the web)
-    - note 3 - you can have courses and variations on the same command line, anything after a c is a courseID, anything
-    after a v is a variationID  
-    - ex1, for a course: `python chessable-to-pgn.py m webFetchThenPgn c 24575` loads and translates "The Art of Attack", resulting
-            in a generated `/pgn/course/24575.pgn` file.  The loaded html files will be in the folders `/course`,
-            `/course/<courseID>` and `/course/<courseID>/variation` folders
-    - ex2, for a variation: `python chessable-to-pgn.py m webFetchThenPgn v 38877075` loads and translates the first variation
-        in the first chapter of the "Checkmate Patterns" course, resulting in a generated `/pgn/variation/38877075.pgn`
-        file, and the html will be in `/course/one-off/variation/38877075.html`
-  - `webFetch`
-    - this is just like `webFetchThenPgn`, except that it doesn't generate the pgn, just the cached html documents 
-    in `/html` `/html/course` and `/html/course/variation` folders 
-  - `pgn`
-    - this is just like webFetchThenPgn, except that it doesn't fetch html, just generates pgn from any html that
-    has been previously fetched
-  - `webAndPgnByVar`
-    - this is the default mode.  
-    - this is similar to `webFetchThenPgn`, but instead of loading all of the html, it inc`rementally generates pgn's as it processes 
-    individual variations
-    - so, in `webFetchThenPgn` mode, the tool fetches the course file, then all chapter files for the course, then all  
-    variation files.  Only then does it go back and process the pgns for the fethced variations.
-    - in this mode - `webAndPgnByVar`, it still fetches the course file and all of the chapter files for that course, 
-    but then as it fetches the html for each variation, it also incrementally then generates that variation's pgn as 
-    well (and adds it to the course pgn, if it's working on a course) 
-      - note that the overall time to completion is about the same, but you get the first pgn MUCH faster this way, 
-      if that matters.  
-  - There are two configuration parameters that you can set via the command line:
-    - `p` sets the root for the PGN data cache.  This is where PGN files will be stored.  The default value is `"./pgn/"
-    - `h` sets the root for the HTML data cache.  This is where HTML files will be stored.  The default value is `"./html/"
-      - Example: `python chessable-to-pgn.py m interactive p c:/ChessData/pgn/ h c:/ChessData/tempData/html/` sets
-      both directories for an interactive session
-    - the other four config settings (chessable loc, your browser and profile locations and profile name) are typically 
-    set once at install (in ConfigData.py) and never modified for that environment.  If you're here goofing around with 
-    a python script to mangle HTML data, AND installing
-    the Google for Testing browser to be able to do it, you should probably be savvy enough to do that in code, once.
-    It's limited to modifying one text file...   If you always want to write to different directories, you can modify
-    those as well, and you won't have to supply them as parameters at runtime.
-  - In testing, we typically let the tool fetch several large course over a couple of hours, then run pgn on
-  those fetched htmls.  This way, we can test different pgn generation code without having to reload from the web each time.  
-  The four different modes allow you to decide how best to process your courses.
-  - We've also tried to run this in multiprocess mode, but consistently get selenium errors with multiple processes 
-  simultaneously accessing the same profile, which should be impossible since we establish one profile per variation.  
-  Anyone wanting to help resolve this should reach out, or do the work :) and generate a pull request. 
+    - `python chessable-to-pgn.py <set courses and variations> <file processing> <set html and pgn file locations> <set other operation params>`
+- Most uses will be in batch mode (which is the default), but there is a minimal interactive mode that can be entered with the flag `interactive`:
+  - `python chessable-to-pgn.py -interactive`
+  - in this mode you will be prompted for what you'd like to do...
+- To set courses and variations:
+  - `-courses` flag is followed by the course ids to process
+    - Example: `python chessable-to-pgn.py -courses 42579 57374` would process the "Sac, Sac, Mate!" (42579) and "Chess 
+    Swindles: Sample Lesson" (57374) courses.
+  - `-variations` flag is followed by the variation ids to process
+    - Example: `python chessable-to-pgn.py -variations 8318178` would process one variation from chapter 4 in the "Sac, Sac, Mate!" course.
+  - you can provide multiple IDs for each flag, and you can use both flags at once:
+    - Example: this processes the courses and variations above in one command - `python chessable-to-pgn.py 
+    -courses 42579 57374 -variations 8318178`
+- File Processing:
+  - the `-web` and `-pgn` flags determine how/when the tool fetches html and writes pgn files:
+    - values for `-web` include:
+      - `update` (default), looks for html files in `htmlRoot` and uses it if it exists, otherwise fetches it from the web 
+      - `all` always fetches html files as needed, overwriting any existing files 
+      - `none` uses existing html files if they exist, otherwise skips the relevant course/chapter/variation 
+    - values for `-pgn` include:
+      - `incremental` (default), writes/updates the output pgn file(s) in `pgnRoot` as variations are fetched and processed 
+      - `after` fetches all requested html files first (if any), then writes all requested pgn data afterwards
+      - `none` does not write any pgn for this run 
+    - Example: `python chessable-to-pgn.py -courses 42579 57374 -web all -pgn after` would fetch the full html for both 
+    specified courses, overwriting any preexisting html files, then write all pgn for both courses.  
+- To set html and pgn file locations:
+  - `htmlRoot` flag sets the base for where the tool will write HTML files.  The default is `./html/`
+  - `pgnRoot` flag sets the base for where the tool will write HTML files.  The default is `./pgn/`
+  - for all locations with spaces, enclose the path in quotes:
+    - Example showing both styles: `python chessable-to-pgn.py -variations 8318178 -htmlRoot "c:/my files/html/" -pgnRoot c:/pgnData`
+  - You can also change these default locations permanently in ConfigData.py.
+- To set other operational parameters related to the browser and session for selenium to use, use the following flags:
+  - `-browserbinary` changes the location of the browser binary to use.  
+    - Typically this will be where you installed the Chrome for Testing instance (see setup)
+    - You should change this default location permanently in ConfigData.py (see setup).
+  - `-browserprofiledir` changes the location of the profile directory the browser will use.  
+    - This is be system dependent - on Windows it's in `"C:/Users/<user>/AppData/Local/Google/Chrome for Testing/User Data"`
+    - You should change this default location permanently in ConfigData.py (see setup).
+  - `-browserprofile` changes the actual profile the browser will use. `Default` is the default and you should not likely need to change this.  
 
 PGN Tags Generated
 -
@@ -172,6 +145,13 @@ Performance and Operational Notes
 
 Release Notes
 - 
+- v0.30 - 01-May-2025 - big code cleanup and change in user interface to make it easier to use
+  - changed modes and made flags specifying how to handle html and pgn simpler
+  - exposed all operational parameters to make it easier to test
+  - made interactive mode a little easier to use
+  - broke command line and other utilities into separate modules
+  - added better documentation to source files
+- made feedback (and this file) current and a little friendlier
 - v0.20 - 29-Apr-2025 - quantum improvement in capability, close to ready for prime-time
   - added the most basic possible interactive mode - the tool runs nicely from a desktop shortcut :)
   - changed default mode to incremental pgn generation in batch mode

@@ -1,51 +1,50 @@
-import os
-import shutil
-import sys
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Filename: chessable-tp-pgn.py
+Author: John DeMastri
+Create Date: 2025-04-27
+Version: 0.3
+Description: Entry point and main workflow driver for the applicaftion
+
+License: MIT License
+Contact: chess@demastri.com
+"""
+
 from datetime import datetime
-# import threading
-# from multiprocessing import Pool
 
 from bs4 import BeautifulSoup
 
-import ConfigData
+import CommandLine
 from WebFetch import WebFetch
 from Pgn import Pgn
 
 profileIds = []
 
+
 def main():
     print("Chessable-to-PGN tool (c) 2025 John DeMastri")
-    if len(sys.argv) < 2:
-        print("Please provide at least one courseID")
-        return
 
     print("--- starting ---")
     print(datetime.now())
-    processMode, webFetchMode, courses, variations = processCommandLineParams()
+    processMode, courses, variations = CommandLine.processCommandLineParams()
+    if courses is None:
+        print("- Could not process command line parameters.  Exiting...")
+        return
 
-    match processMode:
-        case "interactive":
-            quit = False
-            while not quit:
-                quit, courseIdAsList, variationIdAsList, htmlOption, doPgn = getNextItemToProcess()
-                # htmlOption: 1 = fetch new, 2 = fetch all, 3 = use existing (don't fetch)
-                if not quit:
-                    processBatch(courseIdAsList, variationIdAsList, htmlOption, doPgn, True)
-                    print("--- HTML "+("New Items " if htmlOption==1 else ("All Items " if htmlOption==2 else "No Items "))+"Fetched")
-                    print("--- PGN "+("" if doPgn else "Not ")+"Generated")
-        case "webFetchThenPgn":
-            processBatch(courses, variations, webFetchMode, True, False)
-        case "webFetch":
-            processBatch(courses, variations, webFetchMode, False, False)
-        case "pgn":
-            processBatch(courses, variations, WebFetch.FETCH_NONE, True, False)
-        case "webAndPgnByVar":
-            for courseID in courses:
-                processBatch([courseID], [], webFetchMode, True, True)
-            for variationId in variations:
-                processBatch([], [variationId], webFetchMode, True, True)
-        case _:
-            print("unknown process mode <" + processMode + ">")
+    if processMode == "interactive":
+        quit = False
+        while not quit:
+            quit, courseId, variationId = CommandLine.getNextItemToProcess()
+            # htmlOption: 1 = fetch new, 2 = fetch all, 3 = use existing (don't fetch)
+            if not quit:
+                processBatch(courseId, variationId)
+                print("--- HTML: " + WebFetch.flagNames[WebFetch.doFetch] + " fetched\n--- PGN: " + Pgn.flagNames[
+                    Pgn.doPgn] + " written")
+    elif processMode == "batch":
+        processBatch(courses, variations)
+    else:
+        print("unknown process mode <" + processMode + ">")
 
     print("--- complete ---")
     print(datetime.now())
@@ -53,108 +52,10 @@ def main():
         input("Exiting interactive mode!  Press ENTER to close this window.")
 
 
-def getNextItemToProcess():
-    srcChoices = ["q", "c", "v"]
-    htmlChoices = ["f", "v", "x", "q"]
-    pgnChoices = ["y", "n", "q"]
-    htmlOptions = { "f":WebFetch.FETCH_NEW, "v":WebFetch.FETCH_ALL, "x":WebFetch.FETCH_NONE, "q":-1 }
-    s = ""
-    cOut = []
-    vOut = []
-    htmlOption = -1
-    while s not in srcChoices:
-        s = input("- Enter 'c' for course, 'v' for variation, 'q' to quit: ")
-        if s == "":
-            s = "c"
-    if s == "q":
-        return True, [], [], s, False
-    if s == "c":
-        c = input("-- Enter the course ID: ")
-        cOut.append(c)
-    if s == "v":
-        v = input("-- Enter the variation ID: ")
-        vOut.append(v)
-    s = ""
-    while s not in htmlChoices:
-        s = input(
-            "--- HTML - Fetch New HTML (f-default), oVerwrite All HTML (v), process eXisting HTML (x), or quit (q)? ")
-        if s == "":
-            s = "f"
-    htmlOption = htmlOptions[s]
-    while s not in pgnChoices:
-        s = input("--- PGN - Write PGN (y-default / n / or q to quit)? ")
-        if s == "":
-            s = "y"
-
-    return s == "q", cOut, vOut, htmlOption, s == "y"
-
-
-def processCommandLineParams():
-    courses = []
-    variations = []
-
-    inCourse = False
-    inChapter = False
-    inVariation = False
-    inMode = False
-    inFetchMode = False
-    inHtml = False
-    inPgn = False
-    processMode = "webAndPgnByVar"  # "webFetchThenPgn" # "webFetch" # "Pgn" # "webAndPgnByVar" #interactive
-    webFetchMode = WebFetch.FETCH_NEW
-    for arg in sys.argv[1:]:
-        if arg == 'c':
-            inCourse = True
-            inChapter = inVariation = False
-            inFetchMode = inMode = False
-            inHtml = inPgn = False
-        elif arg == 'ch':
-            inChapter = True
-            inCourse = inVariation = False
-            inFetchMode = inMode = False
-            inHtml = inPgn = False
-        elif arg == 'v':
-            inVariation = True
-            inCourse = inChapter = False
-            inHtml = inPgn = False
-            inFetchMode = inMode = False
-        elif arg == ('m'):
-            inMode = True  # don't change where IDs go (course / chapter / var)
-        elif arg == ('w'):
-            inFetchMode = True  # set how to process html files
-        elif arg == ('p'):
-            inPgn = True  # don't change where IDs go (course / chapter / var)
-        elif arg == ('h'):
-            inHtml = True  # don't change where IDs go (course / chapter / var)
-        elif inFetchMode:
-            webFetchMode = int(arg)
-            inMode = False
-            print("- setting web fetch mode to <" + str(webFetchMode) + "> - " + ("New Items " if webFetchMode==1 else ("All Items " if webFetchMode==2 else "No Items ")))
-        elif inMode:
-            processMode = arg
-            inMode = False
-            print("- setting process mode to <" + processMode + ">")
-        elif inPgn:
-            ConfigData.PGN_CACHE_PATH = arg
-            inPgn = False
-            print("- setting PGN root location to <" + arg + ">")
-        elif inHtml:
-            ConfigData.HTML_CACHE_PATH = arg
-            inPgn = False
-            print("- setting Html root location to <" + arg + ">")
-        elif inCourse:
-            courses.append(arg)
-        elif inVariation:
-            variations.append(arg)
-
-    return processMode, webFetchMode, courses, variations
-
-
-def processBatch(courses, variations, doFetch, doPgn, doIncrementalPgn):
-    WebFetch.doFetch = doFetch
-
+def processBatch(courses, variations):
     for courseId in courses:
-        print("--- Processing course " + courseId + " fetch: " + ("New Items " if doFetch == 1 else ("All Items " if doFetch == 2 else "No Items ")) + "pgn: " + str(doPgn))
+        print("--- Processing course " + courseId + " fetch: " + WebFetch.flagNames[WebFetch.doFetch] + " pgn: " +
+              Pgn.flagNames[Pgn.doPgn])
         # print("--- getting variation html ---")
         courseBS, chapters = loadCourseInfo(courseId)
         # this first pass loads/saves all of the chapter htmls
@@ -163,42 +64,39 @@ def processBatch(courses, variations, doFetch, doPgn, doIncrementalPgn):
 
         chapterResults = loadChapterInfo(courseId, chapters)
         # once we have the chapter details, we can load all of the variation htmls
-        if doPgn:
-            if doIncrementalPgn:
-                incremental = False
-                for i in range(len(chapterResults)):
-                    bset, vset = chapterResults[i]
-                    # get each variation individually
-                    for vi in range(len(vset)):
-                        thisVarDet = WebFetch.getVariationDetailFromTag(courseId, vset[vi], "Default")
-                        thisVarDet.append(str(i + 1) + "." + str(vi + 1))
-                        pgnOut = generateCoursePGNs(courseId, [thisVarDet])
-                        Pgn.writeCoursePgnFile(courseId, pgnOut, incremental)
-                        # print(pgnOut)
-                        incremental = True
-            else:
-                variationResults = loadVariationInfo(courseId, chapterResults)
-                # now all of the variation htmls are available locally
-                pgnOut = generateCoursePGNs(courseId, variationResults)
-                # print(pgnOut)
-                Pgn.writeCoursePgnFile(courseId, pgnOut, False)
-        else: # still get the html even if we're not doing pgn...
+        if Pgn.doPgn == Pgn.PGN_INCREMENTAL:
+            appendToFile = False
+            for i in range(len(chapterResults)):
+                bset, vset = chapterResults[i]
+                # get each variation individually
+                for vi in range(len(vset)):
+                    thisVarDet = WebFetch.getVariationDetailFromTag(courseId, vset[vi], "Default")
+                    thisVarDet.append(str(i + 1) + "." + str(vi + 1))
+                    pgnOut = generateCoursePGNs(courseId, [thisVarDet])
+                    Pgn.writeCoursePgnFile(courseId, pgnOut, appendToFile)
+                    appendToFile = True
+        elif Pgn.doPgn == Pgn.PGN_AFTER:
+            variationResults = loadVariationInfo(courseId, chapterResults)
+            # now all of the variation htmls are available locally
+            pgnOut = generateCoursePGNs(courseId, variationResults)
+            Pgn.writeCoursePgnFile(courseId, pgnOut, False)
+        else:
+            # still get the html even if we're not doing pgn...
             loadVariationInfo(courseId, chapterResults)
 
         print("----------")
 
     for variationId in variations:
         courseId = "one-off"
-        print("--- Processing variation " + variationId + " fetch: " + ("New Items " if doFetch == 1 else ("All Items " if doFetch == 2 else "No Items ")) + "pgn: " + str(doPgn))
-        # print("--- getting variation html ---")
+        print("--- Processing variation " + variationId + " fetch: " + WebFetch.flagNames[WebFetch.doFetch] + " pgn: " +
+              Pgn.flagNames[Pgn.doPgn])
         thisVarResult = WebFetch.getVariationDetailFromId(courseId, variationId, "Default")
         if thisVarResult is None:
             continue
         thisVarResult.append("x.x")
-        if doPgn:
+        if Pgn.doPgn != Pgn.PGN_NONE:
+            # in this case there's no distinction between incremental / after
             pgnOut = generateCoursePGNs(courseId, [thisVarResult])
-            # prints...actually want to save this to disk somewhere...
-            # print(pgnOut)
             Pgn.writeVariationPgnFile(variationId, pgnOut)
 
 
@@ -230,8 +128,8 @@ def loadVariationInfo(courseId, chapterResults):
     variationResults = []
 
     variationsRead = 0
-    chapterNbr = 0
-    variationNbr = 0
+    chapterNbr = 0  # used to build round string
+    variationNbr = 0  # used to build round string
     for b, v in chapterResults:
         chapterNbr += 1
         variationNbr = 0
@@ -254,6 +152,7 @@ def loadVariationInfo(courseId, chapterResults):
 
 
 def generateCoursePGNs(courseId, variationResults):
+    print(" Writing Course PGN file for course "+courseId)
     aggregatePgn = ""
     for [variation, variationId, roundStr] in variationResults:
         pgnOut = Pgn.createPgnFromHtml(courseId, variationId, variation, roundStr)
@@ -262,36 +161,13 @@ def generateCoursePGNs(courseId, variationResults):
     return aggregatePgn
 
 
-def buildTestingProfiles(ref: str, prefix: str, pool_size: int):
-    global profileIds
-    for x in range(pool_size):
-        srcDir = ConfigData.TESTING_PROFILE_BASE_DIR + "/" + "Default"
-        destDir = ConfigData.TESTING_PROFILE_BASE_DIR + "/" + prefix + str(x)
-        if not os.path.exists(destDir):
-            shutil.copytree(srcDir, destDir, dirs_exist_ok=True)
-        profileIds.append(prefix + str(x))
-
-
-def destroyTestingProfiles(str, prefix: str, pool_size: int):
-    for x in range(pool_size):
-        thisDir = ConfigData.TESTING_PROFILE_BASE_DIR + "/" + prefix + str(x)
-        shutil.rmtree(thisDir)
-
-
 def processChapter(courseId, tagStr, profileName):
-    # print("In pool fn '" + tagStr + "' ("+profileName+") ")
     chapter = BeautifulSoup(tagStr, "html.parser")
     print("Parsing '" + WebFetch.getChapterName(chapter) + "' (" + profileName + ") ")
     chapterBS, variations = WebFetch.getChapterDetail(courseId, chapter, profileName)
     print(" returned  '" + WebFetch.getChapterName(chapter) + "' had (" + profileName + ") " + str(
         len(variations)) + " variations")
-    # print(" leaving pool fn '" + chessable-to-pgn.getChapterName(chapter) + "' had ("+profileName+") ")
     return [chapterBS, variations]
-
-
-def processChapterFake(courseId, tagStr):
-    chapter = BeautifulSoup(tagStr, "html.parser")
-    print("----- reading chapter '" + WebFetch.getChapterName(chapter) + "'")
 
 
 if __name__ == "__main__":

@@ -1,3 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Filename: Pgn.py
+Author: John DeMastri
+Create Date: 2025-04-27
+Version: 0.3
+Description: This script parses HTML and retrieves the information necessary to write as PGN files.
+Given variation information as bs4 elements and walks it to find header, move and commentary information.
+
+License: MIT License
+Contact: chess@demastri.com
+"""
 import re
 from pathlib import Path
 
@@ -13,6 +26,14 @@ lastSeenFenParts = ""
 lastSeenSan = ""
 
 class Pgn:
+    PGN_NONE = 0
+    PGN_INCREMENTAL = 1
+    PGN_AFTER = 2
+    flagNames = ["none", "incremental", "after"]
+
+    def __init__(self):
+        Pgn.doPgn = Pgn.PGN_INCREMENTAL
+
     @classmethod
     def createPgnFromHtml(cls, courseId:str, variationId, variation, roundStr):
         count=0
@@ -61,11 +82,10 @@ class Pgn:
         global firstMove
         global lastSeenFenParts
         global lastSeenSan
-        # this is actually much closer to correct than it has a right to be
-        # two obvious things to work on:
+        # Notes:
         #  c.text is actually recursive.  CommentInMove is not a PGN comment, contains both variations and comments!!
-        #    so will have to  back out the {}, and when we know which, wrap variations in (), comments in {}
-        #  text has some formatting <h1>...that should be better represented in PGN comments (whether CB reads or not)
+        #    when we know what we're working on, wrap variations in (), comments in {}
+        #  ToDo: text has some formatting <h1>...that should be better represented in PGN comments (whether CB reads or not)
         outString = ""
         depth += 1
         count += 1
@@ -152,15 +172,12 @@ class Pgn:
         nagStrings = { "!": 1, "?": 2, "!!": 3, "??": 4, "!?": 5, "?!": 6,
                        "=": 11, "∞": 13,
                        "⩲": 14, "⩱": 15, "±": 16, "∓": 17, "+-": 18, "-+": 19 }
-        # at the very least, I need example characters for 15 and 17 - black slightly and moderate adv
 
         if(len(c)>=2 and c[len(c)-2:] in nagStrings.keys()):
             return " $"+str(nagStrings[c[len(c)-2:]])
         if(len(c)>=1 and c[len(c)-1:] in nagStrings.keys()):
             return " $"+str(nagStrings[c[len(c)-1:]])
-
-        # note, this occurs in the next child after the move text:  <span class="annotation" data-original-title="Good move">!</span>
-
+        # note, this can occur in the next child after the move text:  <span class="annotation" data-original-title="Good move">!</span>
         return ""
 
     @classmethod
