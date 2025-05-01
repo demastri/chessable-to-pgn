@@ -112,7 +112,7 @@ class WebFetch:
 
     @classmethod
     def getVariationHtml(cls, variationId: str, courseId:str, profileName:str):
-        return WebFetch.getHtml("variation", variationId, profileName, "course/" + str(courseId))
+        return WebFetch.getHtml("variation", variationId, profileName, "course/" + str(courseId), True)
 
     @classmethod
     def getVariationParts(cls, variationBs: bs4.element.Tag):
@@ -139,7 +139,7 @@ class WebFetch:
         return WebFetch.getHtml("course", courseId, profileName)
 
     @classmethod
-    def getHtml(cls, elementType, elementId: str, profileName: str, fileroot=""):
+    def getHtml(cls, elementType, elementId: str, profileName: str, fileroot="", isVar = False):
         location = elementType
         if elementId != "":
             location += "/" + elementId
@@ -159,7 +159,7 @@ class WebFetch:
                 if WebFetch.doFetch == WebFetch.FETCH_NONE:
                     return None
                 # else doFetch == FETCH_NEW
-                pageHtml = WebFetch.loadHtmlFromWeb(url, profileName)
+                pageHtml = WebFetch.loadHtmlFromWeb(url, profileName, isVar)
                 WebFetch.writeHtmlToFile(location, pageHtml)
 
         bs = BeautifulSoup(pageHtml, 'html.parser')
@@ -180,7 +180,7 @@ class WebFetch:
             return file.write(content)
 
     @classmethod
-    def loadHtmlFromWeb(self, url, profileName):
+    def loadHtmlFromWeb(self, url, profileName, isVar = False):
         #print("Reading "+url+" using "+profileName)
         for retry in range(3):
             try:
@@ -192,10 +192,13 @@ class WebFetch:
                 browser = webdriver.Chrome(options=options)
                 browser.get(url)
                 time.sleep(2)
-                controls = browser.find_element(By.ID,"controls")
-                buttons = controls.find_elements(By.TAG_NAME,"button")
-                buttons[1].click()
-                time.sleep(1)
+                if isVar:
+                    controls = browser.find_element(By.ID,"controls")
+                    buttons = controls.find_elements(By.TAG_NAME,"button")
+                    backClass = buttons[1].get_attribute("class")
+                    if not "myButtonOff" in backClass:
+                        buttons[1].click()
+                        time.sleep(1)
                 outText = browser.page_source
                 browser.quit()
                 return outText
