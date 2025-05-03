@@ -72,7 +72,7 @@ class Pgn:
 [Round \""""+roundStr+"""\"]
 [White \""""+chapterTitle+"""\"]
 [Black \""""+variationTitle+"""\"]
-[Result \""""+result+"""\"]\"
+[Result \""""+result+"""\"]
 """
         if FEN != startingPosition:
             header += "[FEN \""+FEN+"\"]\n"
