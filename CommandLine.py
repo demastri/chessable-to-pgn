@@ -19,9 +19,10 @@ from WebFetch import WebFetch
 from Pgn import Pgn
 
 def processCommandLineParams():
-    # there really just end up being two operational parameters
-    # - webFetchMode = All (overwrite), None (Use Existing), Update (Use Existing, Get the Rest)
-    # - pgnMode - No (don't generate), Incremental (after getting a variation, do Pgn), After (after getting all vars, do Pgn)
+    # there really just end up being three functional  parameters
+    # - web  - All (overwrite), None (Use Existing), Update (Use Existing, Get the Rest)
+    # - pgn  - No (don't generate), Incremental (after getting a variation, do Pgn), After (after getting all vars, do Pgn)
+    # - key (default) / noKey -  controls if the first "key" position in the variation is marked in the pgn
     # there are two arguments
     # - list of courses - get the course, get all chapters, then all variations for each course in course and course/variations
     # - list of variations - get the listed variations, and place in one-off/variations
@@ -81,6 +82,14 @@ def processCommandLineParams():
             WebFetch.doFetch = Utilities.getOptionFromList(i, "web mode", WebFetch.flagNames)
             if WebFetch.doFetch is None:
                 return None, None, None
+            continue
+
+        if thisArg == "-key":
+            Pgn.PGN_WRITE_KEY_MOVE = True
+            continue
+
+        if thisArg == "-nokey":
+            Pgn.PGN_WRITE_KEY_MOVE = False
             continue
 
         if thisArg == "-pgn":

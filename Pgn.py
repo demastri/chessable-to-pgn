@@ -19,11 +19,14 @@ import ConfigData
 
 PGN_COURSE_PATH = ConfigData.PGN_CACHE_PATH + 'course/'
 PGN_VARIATION_PATH = ConfigData.PGN_CACHE_PATH + 'variation/'
+PGN_WRITE_KEY_MOVE = True
 
 count = 0
 firstMove = True
 lastSeenFenParts = ""
 lastSeenSan = ""
+keyWritten = False
+
 
 class Pgn:
     PGN_NONE = 0
@@ -35,9 +38,11 @@ class Pgn:
         Pgn.doPgn = Pgn.PGN_INCREMENTAL
 
     @classmethod
-    def createPgnFromHtml(cls, courseId:str, variationId, variation, roundStr):
-        count=0
+    def createPgnFromHtml(cls, courseId: str, variationId, variation, roundStr):
+        count = 0
         firstMove = True
+        keyWritten = False
+
         name, chapter, moves, term, inputFEN = WebFetch.getVariationParts(variation)
         if chapter == []:
             print(" - HTML not found for variation")
@@ -50,7 +55,7 @@ class Pgn:
         return re.sub(r' +', ' ', outPgn)
 
     @classmethod
-    def buildHeader(cls, courseId, variationId, name:str, chapter, result, roundStr, FEN):
+    def buildHeader(cls, courseId, variationId, name: str, chapter, result, roundStr, FEN):
         # we have 6 pieces of info to be conveyed: course, chapter, variation title, variation url, location as round, and result
         # these can be mapped as:
         #  result => Result
@@ -61,25 +66,24 @@ class Pgn:
         #  variation title => Black
         # Most viewers break the names into first and last based on the ',' character
         # We can prevent that by replacing any "," with '-' (can see if this looks ok...)
-        courseTitle = re.sub(r'\s+', ' ', chapter[0].text.replace( "\n", "")).strip()
-        chapterTitle = re.sub(r'\s+', ' ', chapter[2].text.replace( "\n", "")).strip().replace(",","-")
-        variationTitle = re.sub(r'\s+', ' ', name.replace( "\n", "")).strip().replace(",","-")
-        variationUrl = ConfigData.BASE_CHESSABLE_URL+"variation/"+str(variationId)
+        courseTitle = re.sub(r'\s+', ' ', chapter[0].text.replace("\n", "")).strip()
+        chapterTitle = re.sub(r'\s+', ' ', chapter[2].text.replace("\n", "")).strip().replace(",", "-")
+        variationTitle = re.sub(r'\s+', ' ', name.replace("\n", "")).strip().replace(",", "-")
+        variationUrl = ConfigData.BASE_CHESSABLE_URL + "variation/" + str(variationId)
 
-        header = """[Event \""""+courseTitle+ """\"]
-[Site \""""+variationUrl+"""/\"]
+        header = """[Event \"""" + courseTitle + """\"]
+[Site \"""" + variationUrl + """/\"]
 [Date \"????.??.??\"]
-[Round \""""+roundStr+"""\"]
-[White \""""+chapterTitle+"""\"]
-[Black \""""+variationTitle+"""\"]
-[Result \""""+result+"""\"]
+[Round \"""" + roundStr + """\"]
+[White \"""" + chapterTitle + """\"]
+[Black \"""" + variationTitle + """\"]
+[Result \"""" + result + """\"]
 """
         if FEN != startingPosition:
-            header += "[FEN \""+FEN+"\"]\n"
+            header += "[FEN \"" + FEN + "\"]\n"
         header += "\n"
 
         return header
-
 
     @classmethod
     def buildMoveBody(cls, moves, depth):
@@ -87,6 +91,8 @@ class Pgn:
         global firstMove
         global lastSeenFenParts
         global lastSeenSan
+        global keyWritten
+
         # Notes:
         #  c.text is actually recursive.  CommentInMove is not a PGN comment, contains both variations and comments!!
         #    when we know what we're working on, wrap variations in (), comments in {}
@@ -94,45 +100,57 @@ class Pgn:
         outString = ""
         depth += 1
         count += 1
-        #print(" " * depth + "x")
+        # print(" " * depth + "x")
         outString = ""
 
         for c in moves:
+            firstKey = False
             if c.name == "span" and c.get("class") is not None and "commentInVariation" in c["class"]:
-                outString += "{ "+c.text+" } "
-            if c.name == "div" and c.get("class") is not None and ("openingNum" in c["class"] and Pgn.isTerminator(c.text)):
-                outString += "\n\n "+c.text+"\n\n"
+                outString += "{ " + c.text + " } "
+            if c.name == "div" and c.get("class") is not None and (
+                    "openingNum" in c["class"] and Pgn.isTerminator(c.text)):
+                outString += "\n\n " + c.text + "\n\n"
 
-            if c.name == "div" and c.get("class") is not None and ("whiteMove" in c["class"] or "blackMove" in c["class"]):
+            if c.name == "div" and c.get("class") is not None and (
+                    "whiteMove" in c["class"] or "blackMove" in c["class"]):
+                keyStr = ""
+                if Pgn.PGN_WRITE_KEY_MOVE and "is_key" in c["class"]:
+                    if not keyWritten:
+                        keyWritten = True
+                        keyStr = "{ -KEY- } "
+
                 if firstMove or "whiteMove" in c["class"]:
                     # ok, there's an issue here.  Variations don't have to start at move 1
                     # if they do, no issue, otherwise we need to provide the fen for the game
                     # additionally the fen provided for a move is the fen AFTER the move is made...
                     if firstMove and c["data-fen"] not in firstMoveFENs:
-                        print( "Variation does not begin at starting position")
+                        print("Variation does not begin at starting position")
                     outString += c["data-move"] + " "
                     firstMove = False
-                outString += c["data-san"]+" "
+
+                outString += keyStr + c["data-san"] + " "
                 lastSeenSan = c["data-san"]
                 lastSeenFenParts = c["data-fen"].split()
             if c.name == "span" and c.get("class") is not None and "commentMoveSmall" in c["class"]:
                 if c.get("data-san") is not None:
-                    fenParts = c['data-fen'].split()    # "2r2rk1/3nbpp1/pp1p3P/4pP2/P1q2P2/2N1BQ2/1Pn3BP/3R1R1K b - - 0 22"
-                    if not firstMove and isWhite == fenParts[1]: # two successive moves with the same color
-                        print( " ### repeated move?? ### " + c["data-san"] )
-                    isWhite = fenParts[1] == "b"    # after this move...
-                    moveNbr = int(fenParts[5]) # if it's white to move before this fen, then the number is 1 high
+                    fenParts = c[
+                        'data-fen'].split()  # "2r2rk1/3nbpp1/pp1p3P/4pP2/P1q2P2/2N1BQ2/1Pn3BP/3R1R1K b - - 0 22"
+                    if not firstMove and isWhite == fenParts[1]:  # two successive moves with the same color
+                        print(" ### repeated move?? ### " + c["data-san"])
+                    isWhite = fenParts[1] == "b"  # after this move...
+                    moveNbr = int(fenParts[5])  # if it's white to move before this fen, then the number is 1 high
                     if not isWhite:
                         moveNbr -= 1
                     moveNbr = str(moveNbr)
-                    if firstMove and fenParts[1] != lastSeenFenParts[1]: # this is likely enough of a check...  repeat the last move seen
+                    if firstMove and fenParts[1] != lastSeenFenParts[
+                        1]:  # this is likely enough of a check...  repeat the last move seen
                         # this is a first move in a variation. it should be able to replace the last move seen
                         # if it's the next move. we need to repeat the prior move
                         # this can be seen at the end of a game, when the author provides a potential or actual continuation
                         # so it's a ply behind where this move thinks it is...
                         # print( "Mismatch onMove in variation ..." )
                         # print( lastSeenFenParts, fenParts )
-                        moveNbr = moveNbr if not isWhite else str(int(moveNbr)-1)
+                        moveNbr = moveNbr if not isWhite else str(int(moveNbr) - 1)
                         isWhite = not isWhite
                         outString += moveNbr
                         if isWhite:
@@ -153,13 +171,15 @@ class Pgn:
                         firstMove = False
                     outString += c["data-san"]
                     if Pgn.getNag(c.text) != "":
-                        outString += Pgn.getNag(c.text) # nag could be included in display text
+                        outString += Pgn.getNag(c.text)  # nag could be included in display text
                     outString += " "
-            if c.name == "span" and c.get("class") is not None and "annotation" in c["class"] and c.get("data-original-title") is not None and c["data-original-title"] != "" and Pgn.getNag(c.text) != "":
-                outString = outString[:-1] + Pgn.getNag(c.text) + " " # or nag could be defined in a separate span
+            if c.name == "span" and c.get("class") is not None and "annotation" in c["class"] and c.get(
+                    "data-original-title") is not None and c["data-original-title"] != "" and Pgn.getNag(c.text) != "":
+                outString = outString[:-1] + Pgn.getNag(c.text) + " "  # or nag could be defined in a separate span
 
-            #for embedded variations, write "(" then kids pgn, then ")"
-            if c.name == "span" and c.get("class") is not None and ("commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
+            # for embedded variations, write "(" then kids pgn, then ")"
+            if c.name == "span" and c.get("class") is not None and (
+                    "commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
                 outString += "( "
                 firstMove = True
 
@@ -167,11 +187,11 @@ class Pgn:
             kids = c.findChildren(recursive=False)
             outString = outString + Pgn.buildMoveBody(kids, depth)
 
-            if c.name == "span" and c.get("class") is not None and ("commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
+            if c.name == "span" and c.get("class") is not None and (
+                    "commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
                 outString += " ) \n"
 
-
-        #print(" " * depth + "/x")
+        # print(" " * depth + "/x")
 
         depth -= 1
 
@@ -179,14 +199,14 @@ class Pgn:
 
     @classmethod
     def getNag(cls, c):
-        nagStrings = { "!": 1, "?": 2, "!!": 3, "??": 4, "!?": 5, "?!": 6,
-                       "=": 11, "∞": 13,
-                       "⩲": 14, "⩱": 15, "±": 16, "∓": 17, "+-": 18, "-+": 19 }
+        nagStrings = {"!": 1, "?": 2, "!!": 3, "??": 4, "!?": 5, "?!": 6,
+                      "=": 11, "∞": 13,
+                      "⩲": 14, "⩱": 15, "±": 16, "∓": 17, "+-": 18, "-+": 19}
 
-        if(len(c)>=2 and c[len(c)-2:] in nagStrings.keys()):
-            return " $"+str(nagStrings[c[len(c)-2:]])
-        if(len(c)>=1 and c[len(c)-1:] in nagStrings.keys()):
-            return " $"+str(nagStrings[c[len(c)-1:]])
+        if (len(c) >= 2 and c[len(c) - 2:] in nagStrings.keys()):
+            return " $" + str(nagStrings[c[len(c) - 2:]])
+        if (len(c) >= 1 and c[len(c) - 1:] in nagStrings.keys()):
+            return " $" + str(nagStrings[c[len(c) - 1:]])
         # note, this can occur in the next child after the move text:  <span class="annotation" data-original-title="Good move">!</span>
         return ""
 
@@ -198,26 +218,26 @@ class Pgn:
         return s.strip() in termStrings
 
     @classmethod
-    def writeCoursePgnFile( cls, courseId, pgnOut, incremental ):
-        mode = "a"  if incremental else "w"
+    def writeCoursePgnFile(cls, courseId, pgnOut, incremental):
+        mode = "a" if incremental else "w"
         path = Path(PGN_COURSE_PATH)
         path.mkdir(parents=True, exist_ok=True)
-        with open(PGN_COURSE_PATH+courseId+".pgn", mode, encoding='utf-8') as file:
+        with open(PGN_COURSE_PATH + courseId + ".pgn", mode, encoding='utf-8') as file:
             return file.write(pgnOut)
 
     @classmethod
-    def writeVariationPgnFile( cls, variationId, pgnOut ):
+    def writeVariationPgnFile(cls, variationId, pgnOut):
         path = Path(PGN_VARIATION_PATH)
         path.mkdir(parents=True, exist_ok=True)
-        with open(PGN_VARIATION_PATH+variationId+".pgn", "w", encoding='utf-8') as file:
+        with open(PGN_VARIATION_PATH + variationId + ".pgn", "w", encoding='utf-8') as file:
             return file.write(pgnOut)
 
     @classmethod
     def buildGameResult(cls, result):
-        return "\n "+result+" \n\n"
+        return "\n " + result + " \n\n"
 
     @classmethod
-    def getGameResult( cls, result ):
+    def getGameResult(cls, result):
         for x in result:
             if Pgn.isTerminator(x.text):
                 return x.text
@@ -226,10 +246,10 @@ class Pgn:
 
 startingPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # starting position
 
-firstMoveFENs =[
-    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", # starting position
+firstMoveFENs = [
+    "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",  # starting position
     "rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1",  # a3
-    "rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq a3 0 1", # a4
+    "rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR b KQkq a3 0 1",  # a4
     "rnbqkbnr/pppppppp/8/8/8/1P6/P1PPPPPP/RNBQKBNR b KQkq - 0 1",  # b3
     "rnbqkbnr/pppppppp/8/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq b3 0 1",  # b4
     "rnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1",  # c3

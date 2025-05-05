@@ -85,9 +85,11 @@ Usage
     - values for `-pgn` include:
       - `incremental` (default), writes/updates the output pgn file(s) in `pgnRoot` as variations are fetched and processed 
       - `after` fetches all requested html files first (if any), then writes all requested pgn data afterwards
-      - `none` does not write any pgn for this run 
+      - `none` does not write any pgn for this run
     - Example: `python chessable-to-pgn.py -courses 42579 57374 -web all -pgn after` would fetch the full html for both 
     specified courses, overwriting any preexisting html files, then write all pgn for both courses.  
+  - Additionally, the `-key` (default) and `-noKey` flags determine whether the first Chessable "key" move is marked in 
+  the PGN, with the string comment " -KEY- " 
 - To set html and pgn file locations:
   - `htmlRoot` flag sets the base for where the tool will write HTML files.  The default is `./html/`
   - `pgnRoot` flag sets the base for where the tool will write HTML files.  The default is `./pgn/`
@@ -146,6 +148,8 @@ Performance and Operational Notes
 
 Release Notes
 - 
+- v0.31 - 05-May-2025
+  - added code to write " -KEY- " before first key move in a variation, and command line flags to enable/disable this functionality
 - v0.30 - 01-May-2025
   - support to write FEN when variations don't start at the normal start position
   - big code cleanup and change in user interface to make it easier to use
@@ -188,7 +192,6 @@ Release Notes
 Open Items
 - 
 - Repeated moves in variation (very rare situation, 0 cases found across 8 full courses in testing)
-- Some way to mark key moves in the position (chessable starts variations here...)
 - multiprocessing support is broken
 - ... I think that's it ...
 - if you find something, fix it and send a pull request.  Email (below) may not be replied to in a timely manner...
