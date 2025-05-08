@@ -32,10 +32,10 @@ First Time Setup
 - In "configdata.py" set the following variables:
     - CHROME_FOR_TESTING_BINARY_LOC
       - the location of the binary you just installed, should look something like:
-      - "C:/Users/john/chrome/win64-135.0.7049.114/chrome-win64/chrome.exe"
+      - `C:/Users/<user>/chrome/win64-135.0.7049.114/chrome-win64/chrome.exe`
     - TESTING_PROFILE_BASE_DIR
       - The location that binary will look for profile data, should look something like:
-      - "C:/Users/<user>/AppData/Local/Google/Chrome for Testing/User Data"
+      - `C:/Users/<user>/AppData/Local/Google/Chrome for Testing/User Data`
     - TESTING_PROFILE - the profile this browser should use - likely can leave as "Default"
     - The next two variables can also be set via command line parameters
       - HTML_CACHE_PATH - the place that read html files will be stored - default is './html/'
@@ -198,7 +198,7 @@ Open Items
 
 Testing and Obvious Notes
 -
-- To test this, I would start with one variation from a small course so that you can establish that the tool is setup 
+- To test this, I would start in interactive mode with one variation from a small course so that you can establish that the tool is setup 
 correctly.  I've tried to explain how to do that, but there's no support, warranty or other channel to help you if you
 have trouble, except maybe Reddit.  Good luck.
   - (you can try email to chess at demastri dot com if you're really stuck, but it isn't regularly monitored)

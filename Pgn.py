@@ -34,11 +34,16 @@ class Pgn:
     PGN_AFTER = 2
     flagNames = ["none", "incremental", "after"]
 
+    doPgn = PGN_INCREMENTAL
+
     def __init__(self):
         Pgn.doPgn = Pgn.PGN_INCREMENTAL
 
     @classmethod
     def createPgnFromHtml(cls, courseId: str, variationId, variation, roundStr):
+        global count
+        global firstMove
+        global keyWritten
         count = 0
         firstMove = True
         keyWritten = False
@@ -114,7 +119,7 @@ class Pgn:
             if c.name == "div" and c.get("class") is not None and (
                     "whiteMove" in c["class"] or "blackMove" in c["class"]):
                 keyStr = ""
-                if Pgn.PGN_WRITE_KEY_MOVE and "is_key" in c["class"]:
+                if PGN_WRITE_KEY_MOVE and "is_key" in c["class"]:
                     if not keyWritten:
                         keyWritten = True
                         keyStr = "{ -KEY- } "

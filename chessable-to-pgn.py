@@ -5,7 +5,7 @@ Filename: chessable-tp-pgn.py
 Author: John DeMastri
 Create Date: 2025-04-27
 Version: 0.3
-Description: Entry point and main workflow driver for the applicaftion
+Description: Entry point and main workflow driver for the application
 
 License: MIT License
 Contact: chess@demastri.com

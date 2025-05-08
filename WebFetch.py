@@ -33,6 +33,8 @@ class WebFetch:
     FETCH_NONE = 2
     flagNames = ["update", "all", "none"]
 
+    doFetch = FETCH_NEW
+
     def __init__(self):
         WebFetch.doFetch = WebFetch.FETCH_NEW
 
@@ -66,7 +68,7 @@ class WebFetch:
     def getChapterDetail(cls, courseId: str, chapterBs: bs4.element.Tag, profileName: str):
         href = chapterBs.find('a', href=True)['href']
         tags = href.split('/')
-        chapterID = tags[len(tags)-1]
+        chapterID = tags[len(tags) - 1]
         bs = WebFetch.getChapterHtml(courseId, chapterID, profileName)
         variations = WebFetch.getChapterVariations(bs)
 
@@ -99,25 +101,25 @@ class WebFetch:
         name = variationBs.find('a', href=True).text
         href = variationBs.find('a', href=True)['href']
         tags = href.split('/')
-        variationID = tags[len(tags)-2]
-        print("Getting Variation Detail '"+courseId+"-"+variationID +"-"+name+"'")
+        variationID = tags[len(tags) - 2]
+        print("Getting Variation Detail '" + courseId + "-" + variationID + "-" + name + "'")
         bs = WebFetch.getVariationHtml(variationID, courseId, profileName)
 
         return [bs, variationID]
 
     @classmethod
-    def getVariationDetailFromId(cls, courseId: str, variationID:str, profileName: str ):
+    def getVariationDetailFromId(cls, courseId: str, variationID: str, profileName: str):
         bs = WebFetch.getVariationHtml(variationID, courseId, profileName)
         return [bs, variationID]
 
     @classmethod
-    def getVariationHtml(cls, variationId: str, courseId:str, profileName:str):
+    def getVariationHtml(cls, variationId: str, courseId: str, profileName: str):
         return WebFetch.getHtml("variation", variationId, profileName, "course/" + str(courseId), True)
 
     @classmethod
     def getVariationParts(cls, variationBs: bs4.element.Tag):
         if variationBs is None:
-            return "",[],None, None
+            return "", [], None, None
         try:
             name = variationBs.find('div', id="theOpeningTitle").text
             chapter = variationBs.find('div', class_="allOpeningDetails").find_all("li")
@@ -127,8 +129,7 @@ class WebFetch:
             return name, chapter, moves, term, inputFEN
         except:
             print("problem parsing variation parts\n")
-            return "",[],None, None, None
-
+            return "", [], None, None, None
 
     @classmethod
     def getChapterHtml(cls, courseId: str, chapterId: str, profileName):
@@ -139,7 +140,7 @@ class WebFetch:
         return WebFetch.getHtml("course", courseId, profileName)
 
     @classmethod
-    def getHtml(cls, elementType, elementId: str, profileName: str, fileroot="", isVar = False):
+    def getHtml(cls, elementType, elementId: str, profileName: str, fileroot="", isVar=False):
         location = elementType
         if elementId != "":
             location += "/" + elementId
@@ -167,34 +168,34 @@ class WebFetch:
 
     @classmethod
     def loadHtmlFromFile(self, location):
-        if not os.path.exists(ConfigData.HTML_CACHE_PATH+location+".html"):
+        if not os.path.exists(ConfigData.HTML_CACHE_PATH + location + ".html"):
             return ""
-        with open(ConfigData.HTML_CACHE_PATH+location+".html", "r", encoding='utf-8') as file:
+        with open(ConfigData.HTML_CACHE_PATH + location + ".html", "r", encoding='utf-8') as file:
             return file.read()
 
     @classmethod
     def writeHtmlToFile(self, location, content):
-        path = Path(ConfigData.HTML_CACHE_PATH+location[:location.rfind("/")])
+        path = Path(ConfigData.HTML_CACHE_PATH + location[:location.rfind("/")])
         path.mkdir(parents=True, exist_ok=True)
-        with open(ConfigData.HTML_CACHE_PATH+location+".html", "w", encoding='utf-8') as file:
+        with open(ConfigData.HTML_CACHE_PATH + location + ".html", "w", encoding='utf-8') as file:
             return file.write(content)
 
     @classmethod
-    def loadHtmlFromWeb(self, url, profileName, isVar = False):
-        #print("Reading "+url+" using "+profileName)
+    def loadHtmlFromWeb(self, url, profileName, isVar=False):
+        # print("Reading "+url+" using "+profileName)
         for retry in range(3):
             try:
                 options = webdriver.ChromeOptions()
                 options.add_argument('headless')
                 options.binary_location = ConfigData.CHROME_FOR_TESTING_BINARY_LOC
-                options.add_argument('--user-data-dir='+ConfigData.TESTING_PROFILE_BASE_DIR)
-                options.add_argument('--profile-directory='+profileName) # TESTING_PROFILE)
+                options.add_argument('--user-data-dir=' + ConfigData.TESTING_PROFILE_BASE_DIR)
+                options.add_argument('--profile-directory=' + profileName)  # TESTING_PROFILE)
                 browser = webdriver.Chrome(options=options)
                 browser.get(url)
                 time.sleep(2)
                 if isVar:
-                    controls = browser.find_element(By.ID,"controls")
-                    buttons = controls.find_elements(By.TAG_NAME,"button")
+                    controls = browser.find_element(By.ID, "controls")
+                    buttons = controls.find_elements(By.TAG_NAME, "button")
                     backClass = buttons[1].get_attribute("class")
                     if not "myButtonOff" in backClass:
                         buttons[1].click()
@@ -203,7 +204,7 @@ class WebFetch:
                 browser.quit()
                 return outText
             except Exception as e:
-                print("error in loadHtmlFromWeb for <"+url+"> on attempt :"+str(retry), end="")
+                print("error in loadHtmlFromWeb for <" + url + "> on attempt :" + str(retry), end="")
                 exception_message = e.args[0] if e.args else "No message"
                 print(f": : {exception_message}")
 
