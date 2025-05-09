@@ -15,6 +15,7 @@ License: MIT License
 Contact: chess@demastri.com
 """
 import os.path
+import shutil
 from pathlib import Path
 import bs4
 from selenium import webdriver
@@ -209,3 +210,20 @@ class WebFetch:
                 print(f": : {exception_message}")
 
         return None
+
+    @classmethod
+    def buildTestingProfiles(cls, prefix:str, pool_size:int):
+        global profileIds
+        for x in range(pool_size):
+            srcDir = ConfigData.TESTING_PROFILE_BASE_DIR + "/" + "Default"
+            destDir = ConfigData.TESTING_PROFILE_BASE_DIR + "/" + prefix + str(x)
+            if not os.path.exists(destDir):
+                shutil.copytree(srcDir, destDir,dirs_exist_ok=True)
+            #profileIds.append(prefix + str(x))
+
+
+    @classmethod
+    def destroyTestingProfiles(cls, prefix:str, pool_size:int):
+        for x in range(pool_size):
+            thisDir = ConfigData.TESTING_PROFILE_BASE_DIR + "/" + prefix + str(x)
+            shutil.rmtree(thisDir)

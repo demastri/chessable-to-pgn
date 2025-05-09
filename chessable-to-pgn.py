@@ -10,8 +10,9 @@ Description: Entry point and main workflow driver for the application
 License: MIT License
 Contact: chess@demastri.com
 """
-
+import multiprocessing
 from datetime import datetime
+from time import sleep
 
 from bs4 import BeautifulSoup
 
@@ -169,6 +170,102 @@ def processChapter(courseId, tagStr, profileName):
         len(variations)) + " variations")
     return [chapterBS, variations]
 
+"""
+design notes - proper multiprocessing
+only need them for loading html
+in c-t-p.py the nethod processBatch synchrohnously loads html and writes to disk, then writes pgn
+breaking these apart to work asynchronously would require a method to start processes
+
+before any work is done, we can set the processes up - n for web fetching and one for writing pgn
+when a file is needed, we can add it to the working queue for that process
+    can round robin the processes - just adding work to the queue
+note that the work from the command line will just be courses or variations
+    as work completes, it may cause chapter or variations jobs to be started
+as variation jobs complete, we can write pgn by adding a job to the working queue for the pgn process
+
+when the process starts, it checks its working queue, while it's empty, it sleeps and checks again
+    if it's not empty, it reads the first entry, fetches the html (if it doesn't exist), it writes it to disk 
+    then writes the id to its complete queue and removes it from its working queue. 
+    
+actually, could have course processes, chapter processes, and variation processes.
+the fanout is like 1 course -> 15 chapters each -> 20 variations each...  
+    so maybe 1 course process, 3 chapter processes, and 10 variation processes.
+then when a variation loads, it would parse and add jobs to the variation, and variation / pgn, and pgn. 
+when course loads, it would parse and add jobs to the chapter, and chapter/variation, and variation / pgn
+Each one can kill the downstream processes when it's done.
+
+This way the main process simply starts the jobs from the input parameters, everything is done downstream
+The main process ends when all of the processes are idle.
+
+"""
+def worker(qIn, qOut, id):
+    while True:
+        item = qIn.get()
+        if item is None:
+            qIn.task_done()
+            break
+        print(f"Process {multiprocessing.current_process().name} processing: {item}")
+        content = WebFetch.loadHtmlFromWeb("https://www.chessable.com/variation/5094106", profileName="Default") #"Profile "+str(id))
+        print(f"Process {multiprocessing.current_process().name} Back from getting a web page")
+        WebFetch.writeHtmlToFile(f"./html/{item}.html", content)
+        print(f"Process {multiprocessing.current_process().name} web page written")
+        qOut.put(item)
+        qIn.task_done()
+    print(f"Process {multiprocessing.current_process().name} exiting")
+
+def generateQueues():
+    working = multiprocessing.JoinableQueue()
+    completed = multiprocessing.JoinableQueue()
+    return working, completed
+
+def startPool(poolSize, working, completed, worker):
+    processes = []
+    for i in range(poolSize):
+        p = multiprocessing.Process(target=worker, args=(working,completed, i), name=f"Worker-{i}")
+        processes.append(p)
+        p.start()
+    return processes
+
+
+def testMultiProc(poolSize, workSize):
+
+    # set up the queues and processes
+    working, completed = generateQueues()
+    processes = startPool(poolSize, working, completed, worker)
+
+    print(f"Building Profiles")
+    #WebFetch.buildTestingProfiles("Profile ", poolSize)
+
+    # do some work on the processes
+    for item in range(workSize):
+        working.put(item)
+    print(f"Data loaded into Queue")
+
+    totalCount = 0
+    while totalCount < workSize:
+        totalCount += 1
+        print(str(completed.get())+" was processed - item count: "+str(totalCount))
+        completed.task_done()
+
+    # at this point the queues are empty, processes are active, but still running
+    # tell the processes to shut down when done
+    print(f"Read inputs, processed outputs, sending kill signal")
+    for item in range(poolSize):
+        working.put(None)
+
+    working.join()
+    completed.join()
+    print(f"Queues joined")
+
+    for p in processes:
+        p.join()
+        print(f"Process {p.name} joined")
+
+    print(f"Destroying Profiles")
+    #WebFetch.destroyTestingProfiles("Profile ", poolSize)
+
+    print(f"parent Process ending")
 
 if __name__ == "__main__":
-    main()
+    testMultiProc(2, 4)
+    #main()
