@@ -148,6 +148,10 @@ Performance and Operational Notes
 
 Release Notes
 - 
+- v0.32 - 10-May-2025
+  - fixed two odd ChessBase bugs when importing VALID PGN
+  - 1 was bad handling of comments at the end of games, 
+  - 2 was using any number ending a comment as the last move's time used (a little wonky - added a "_", but not too obtrusive
 - v0.31 - 05-May-2025
   - added code to write " -KEY- " before first key move in a variation, and command line flags to enable/disable this functionality
 - v0.30 - 01-May-2025

@@ -1,0 +1,206 @@
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "This displays correctly"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 Nf6 { variation Comment } )
+e5
+{ Trailing Comment }
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "This does not display correctly"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 )
+{ Trailing Comment }
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "This does not display correctly"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 )
+{ Middle Comment - this actually ties to the 2nd variation...}
+( 1. Nc3 )
+{ Trailing Comment - this actually ties to the 2nd variation...}
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Workaround"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 )
+{ Middle Comment - this actually ties to the 2nd variation...}
+( 1. Nc3 )
+Z0
+{ Trailing Comment - this actually ties to the 2nd variation...}
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Workaround"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 )
+Z0
+{ 1 Trailing Comment 1 }
+{ 2 Trailing Comment 2 }
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Move Time Issue"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 { 5 Inner Comment 5 })
+{ 1 Trailing Comment 1 }
+{ 3 Trailing Comment 3 }
+Z0
+{ 2 Trailing Comment 2 }
+{ 4 Trailing Comment 4 }
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Workaround for Move Time Issue"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 { 5 Inner Comment 5 }{_})
+{ 1 Trailing Comment 1 }
+{ 3 Trailing Comment 3 }{_}
+Z0
+{ 2 Trailing Comment 2 }
+{ 4 Trailing Comment 4x}
+*
+
+[Event "Trailing Comment Handling"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Workaround"]
+[Black ""]
+[Result "*"]
+
+{ Leading Comment }
+1. e4
+( 1. Nf3 )
+{ 1 Trailing Comment 1 }
+{ 2 Trailing Comment 2 }
+Z0
+*
+
+[Event "Trailing Comment Handling with FEN"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "This displays correctly"]
+[Black ""]
+[Result "*"]
+[FEN "r2qr1k1/1b1n1ppp/p1p1p3/1p6/3P4/2P2N2/PPQB1PPP/R3R1K1 w - - 0 1"]
+
+{ Leading Comment }
+1. Ng5
+( 1. h3 )
+h6
+{ Trailing Comment }
+ *
+
+[Event "Trailing Comment Handling with FEN"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "This does not display correctly"]
+[Black ""]
+[Result "*"]
+[FEN "r2qr1k1/1b1n1ppp/p1p1p3/1p6/3P4/2P2N2/PPQB1PPP/R3R1K1 w - - 0 1"]
+
+{ Leading Comment }
+1. Ng5
+( 1. h3 )
+{ Trailing Comment }
+ *
+
+[Event "Trailing Comment Handling with FEN"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "This does not display correctly"]
+[Black ""]
+[Result "*"]
+[FEN "r2qr1k1/1b1n1ppp/p1p1p3/1p6/3P4/2P2N2/PPQB1PPP/R3R1K1 w - - 0 1"]
+
+1. Ng5
+( 1. h3 )
+{ Trailing Comment }
+ *
+
+[Event "Trailing Comment Handling with FEN"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Workaround"]
+[Black ""]
+[Result "*"]
+[FEN "r2qr1k1/1b1n1ppp/p1p1p3/1p6/3P4/2P2N2/PPQB1PPP/R3R1K1 w - - 0 1"]
+
+{ Leading Comment }
+1. Ng5
+( 1. h3 )
+{ Trailing Comment }
+Z0
+ *
+
+[Event "Trailing Comment Handling with FEN"]
+[Site ""]
+[Date "????.??.??"]
+[Round "x.x"]
+[White "Workaround"]
+[Black ""]
+[Result "*"]
+[FEN "r2qr1k1/1b1n1ppp/p1p1p3/1p6/3P4/2P2N2/PPQB1PPP/R3R1K1 w - - 0 1"]
+
+{ Leading Comment }
+1. Ng5
+( 1. h3 )
+Z0
+{ Trailing Comment }
+ *
