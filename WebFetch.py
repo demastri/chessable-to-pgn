@@ -119,7 +119,7 @@ class WebFetch:
     @classmethod
     def getVariationParts(cls, variationBs: bs4.element.Tag):
         if variationBs is None:
-            return "", [], None, None
+            return "", [], None, None, None
         try:
             name = variationBs.find('div', id="theOpeningTitle").text
             chapter = variationBs.find('div', class_="allOpeningDetails").find_all("li")
@@ -163,7 +163,7 @@ class WebFetch:
                 pageHtml = WebFetch.loadHtmlFromWeb(url, profileName, isVar)
                 WebFetch.writeHtmlToFile(location, pageHtml)
 
-        bs = BeautifulSoup(pageHtml, 'html.parser')
+        bs = None if pageHtml is None else BeautifulSoup(pageHtml, 'html.parser')
         return bs
 
     @classmethod
@@ -178,7 +178,10 @@ class WebFetch:
         path = Path(ConfigData.HTML_CACHE_PATH + location[:location.rfind("/")])
         path.mkdir(parents=True, exist_ok=True)
         with open(ConfigData.HTML_CACHE_PATH + location + ".html", "w", encoding='utf-8') as file:
-            return file.write(content)
+            if content is None:
+                print("-- returned no content from web")
+            else:
+                file.write(content)
 
     @classmethod
     def loadHtmlFromWeb(self, url, profileName, isVar=False):
