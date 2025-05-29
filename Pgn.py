@@ -26,7 +26,8 @@ STARTING_POSITION = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  
 
 count = 0
 firstMove = True
-lastSeenFenParts = ""
+firstMoveNbr = -1
+lastSeenFenParts = []
 lastSeenSan = ""
 keyWritten = False
 
@@ -46,10 +47,12 @@ class Pgn:
     def createPgnFromHtml(cls, courseId: str, variationId, variation, roundStr):
         global count
         global firstMove
+        global firstMoveNbr
         global keyWritten
         count = 0
         firstMove = True
         keyWritten = False
+        firstMoveNbr = -1
 
         name, chapter, moves, term, inputFEN = WebFetch.getVariationParts(variation)
 
@@ -59,8 +62,10 @@ class Pgn:
         if inputFEN != STARTING_POSITION:
             print("Variation does not begin at starting position")
         result = Pgn.getGameResult(term)
-        outPgn = Pgn.buildHeader(courseId, variationId, name, chapter, result, roundStr, inputFEN)
-        outPgn += Pgn.buildMoveBody(moves, 0)
+        moveBody = Pgn.buildMoveBody(moves, 0)
+        inputFEN = Pgn.updateFEN(inputFEN)
+        header = Pgn.buildHeader(courseId, variationId, name, chapter, result, roundStr, inputFEN)
+        outPgn = header + moveBody
         # there's are two odd chessbase bugs in PGN Import - see included "ChessBase import issue.pgn":
         #  found In CB17, v37 - May '25
         # 1 - if there's are trailing comment(s) in a game (nothing after it but the game terminator)
@@ -83,7 +88,16 @@ class Pgn:
         return re.sub(r' +', ' ', outPgn)
 
     @classmethod
+    def updateFEN(cls, fen):
+        global firstMoveNbr
+
+        fenParts = fen.split()
+        fenParts[5] = str(firstMoveNbr)
+        return " ".join(fenParts)
+
+    @classmethod
     def buildHeader(cls, courseId, variationId, name: str, chapter, result, roundStr, FEN):
+
         # we have 6 pieces of info to be conveyed: course, chapter, variation title, variation url, location as round, and result
         # these can be mapped as:
         #  result => Result
@@ -117,6 +131,7 @@ class Pgn:
     def buildMoveBody(cls, moves, depth):
         global count
         global firstMove
+        global firstMoveNbr
         global lastSeenFenParts
         global lastSeenSan
         global keyWritten
@@ -149,6 +164,8 @@ class Pgn:
 
                 if firstMove or "whiteMove" in c["class"]:
                     outString += c["data-move"] + " "
+                    if firstMoveNbr < 0:
+                        firstMoveNbr = int(c["data-move"][:c["data-move"].find(".")])
                     firstMove = False
 
                 outString += keyStr + c["data-san"] + " "
@@ -156,16 +173,13 @@ class Pgn:
                 lastSeenFenParts = c["data-fen"].split()
             if c.name == "span" and c.get("class") is not None and "commentMoveSmall" in c["class"]:
                 if c.get("data-san") is not None:
-                    fenParts = c[
-                        'data-fen'].split()  # "2r2rk1/3nbpp1/pp1p3P/4pP2/P1q2P2/2N1BQ2/1Pn3BP/3R1R1K b - - 0 22"
+                    fenParts = c['data-fen'].split()  # "2r2rk1/3nbpp1/pp1p3P/4pP2/P1q2P2/2N1BQ2/1Pn3BP/3R1R1K b - - 0 22"
                     if not firstMove and isWhite == fenParts[1]:  # two successive moves with the same color
                         print(" ### repeated move?? ### " + c["data-san"])
                     isWhite = fenParts[1] == "b"  # after this move...
-                    moveNbr = int(fenParts[5])  # if it's white to move before this fen, then the number is 1 high
-                    if not isWhite:
-                        moveNbr -= 1
+                    moveNbr = c["data-mid"]
                     moveNbr = str(moveNbr)
-                    if firstMove and fenParts[1] != lastSeenFenParts[1]:
+                    if firstMove and (len(lastSeenFenParts) == 0 or fenParts[1] != lastSeenFenParts[1]):
                         # this is likely enough of a check...  repeat the last move seen
                         # this is a first move in a variation. it should be able to replace the last move seen
                         # if it's the next move. we need to repeat the prior move
@@ -208,7 +222,7 @@ class Pgn:
 
             # in any event, make sure we write any kid nodes' data
             kids = c.findChildren(recursive=False)
-            outString = outString + Pgn.buildMoveBody(kids, depth)
+            outString += Pgn.buildMoveBody(kids, depth)
 
             if c.name == "span" and c.get("class") is not None and (
                     "commentTopvar" in c["class"] or "commentSubvar" in c["class"]):
@@ -224,7 +238,8 @@ class Pgn:
     def getNag(cls, c):
         nagStrings = {"!": 1, "?": 2, "!!": 3, "??": 4, "!?": 5, "?!": 6,
                       "=": 11, "∞": 13,
-                      "⩲": 14, "⩱": 15, "±": 16, "∓": 17, "+-": 18, "-+": 19}
+                      "⩲": 14, "⩱": 15, "±": 16, "∓": 17, "+-": 18, "-+": 19,
+                      "⇆": 132}
 
         if (len(c) >= 2 and c[len(c) - 2:] in nagStrings.keys()):
             return " $" + str(nagStrings[c[len(c) - 2:]])
