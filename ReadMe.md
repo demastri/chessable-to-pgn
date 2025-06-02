@@ -148,6 +148,8 @@ Performance and Operational Notes
 
 Release Notes
 - 
+- v0.33 - 29-May-2025
+  - two small fixes (FEN-driven move numbering and counterplay NAG)
 - v0.32 - 10-May-2025
   - fixed two odd ChessBase bugs when importing VALID PGN
   - 1 was bad handling of comments at the end of games, 
@@ -195,10 +197,10 @@ Release Notes
 
 Open Items
 - 
-- Repeated moves in variation (very rare situation, 0 cases found across 8 full courses in testing)
-- multiprocessing support is broken
-- ... I think that's it ...
+- see issue log on github for open functional issues, but the tool is fairly complete 
+- multiprocessing support is coming at some point
 - if you find something, fix it and send a pull request.  Email (below) may not be replied to in a timely manner...
+- ... I think that's it ...
 
 Testing and Obvious Notes
 -
